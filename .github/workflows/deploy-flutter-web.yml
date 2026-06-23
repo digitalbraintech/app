@@ -37,7 +37,8 @@ jobs:
 
       # Served at the apex custom domain, so base href is "/". Flutter's default
       # hash URL strategy resolves routes client-side without a custom 404.html.
-      - run: flutter build web --release --base-href "/"
+      # --no-tree-shake-icons: the app uses non-constant IconData, which blocks icon tree-shaking.
+      - run: flutter build web --release --base-href "/" --no-tree-shake-icons
 
       - uses: actions/configure-pages@v5
 
