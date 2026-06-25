@@ -7,6 +7,7 @@ import 'package:media_kit/media_kit.dart';
 
 import 'package:digitalbrain_flutter/app.dart';
 import 'package:digitalbrain_flutter/digital_brain_ui/glow/glow_icon.dart';
+import 'package:digitalbrain_flutter/features/surface_demo/surface_demo_screen.dart';
 import 'package:digitalbrain_flutter/grpc/digitalbrain.pb.dart' as gw;
 import 'package:digitalbrain_flutter/grpc/digitalbrain.pbgrpc.dart';
 import 'package:digitalbrain_flutter/grpc/endpoint.dart';
@@ -24,6 +25,11 @@ Future<void> main() async {
 
   DigitalBrainTelemetry.initialize();
   Bloc.observer = TelemetryBlocObserver();
+
+  if (const bool.fromEnvironment('SURFACE_DEMO')) {
+    runApp(const SurfaceDemoApp());
+    return;
+  }
 
   // On web we keep the default hash strategy so GitHub Pages can host the
   // SPA without a 404 redirect dance — every deep link resolves under the
