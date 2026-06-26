@@ -2,55 +2,59 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:digitalbrain_flutter/telemetry/platform_env.dart';
 
 (String host, int port, bool secure) resolveKernelEndpoint() {
+  final base = Uri.base;
+
   if (kIsWeb) {
-    final u = Uri.base;
-    final portParam = u.queryParameters['port'];
-    if (portParam != null) {
+    final portParam = base.queryParameters['port'] ?? getEnv('KERNEL_PORT');
+    if (portParam != null && portParam.isNotEmpty) {
       final p = int.tryParse(portParam);
       if (p != null) {
-        return (u.host, p, u.scheme == 'https');
-      }
-    }
-
-    final jsPort = getEnv('KERNEL_PORT');
-    if (jsPort != null && jsPort.isNotEmpty) {
-      final p = int.tryParse(jsPort);
-      if (p != null) {
-        return (u.host, p, u.scheme == 'https');
+        return (base.host, p, base.scheme == 'https');
       }
     }
   }
 
   const configured = String.fromEnvironment('KERNEL_ENDPOINT');
-  if (configured.isNotEmpty) {
-    final u = Uri.parse(configured);
+  final aspireUrl = kIsWeb ? null : getEnv('services__kernel__https__0');
+
+  return resolveEndpointFrom(
+    isWeb: kIsWeb,
+    base: base,
+    kernelEndpoint: configured.isEmpty ? null : configured,
+    aspireKernelUrl: aspireUrl,
+  );
+}
+
+(String host, int port, bool secure) resolveEndpointFrom({
+  required bool isWeb,
+  required Uri base,
+  String? kernelEndpoint,
+  String? aspireKernelUrl,
+}) {
+  if (kernelEndpoint != null && kernelEndpoint.isNotEmpty) {
+    final u = Uri.parse(kernelEndpoint);
     if (u.host.isEmpty) {
       throw StateError(
-        'KERNEL_ENDPOINT="$configured" has no host. Expected an absolute URL, '
-        'e.g. https://localhost:59066.',
+        'KERNEL_ENDPOINT="$kernelEndpoint" has no host. Expected an absolute '
+        'URL, e.g. https://api.digitalbrain.tech.',
       );
     }
-    if (kIsWeb) {
-      return (Uri.base.host, u.port, u.scheme == 'https');
-    }
-    return (u.host, u.port, u.scheme == 'https');
+    final port = u.hasPort ? u.port : (u.scheme == 'https' ? 443 : 80);
+    return (u.host, port, u.scheme == 'https');
   }
 
-  if (kIsWeb) {
-    final u = Uri.base;
-    return (u.host, u.port, u.scheme == 'https');
+  if (isWeb) {
+    final port = base.hasPort ? base.port : (base.scheme == 'https' ? 443 : 80);
+    return (base.host, port, base.scheme == 'https');
   }
 
-  final aspireUrl = getEnv('services__kernel__https__0');
-  if (aspireUrl == null || aspireUrl.isEmpty) {
+  if (aspireKernelUrl == null || aspireKernelUrl.isEmpty) {
     throw StateError(
-      'DigitalBrain Windows client requires services__kernel__https__0 env var '
-      '(or --dart-define=KERNEL_ENDPOINT). When launched via Aspire '
-      '(flutter-windows resource) the kernel URL is injected as the '
-      'KERNEL_ENDPOINT dart-define. For standalone `flutter run` set it, '
-      r"e.g. flutter run -d windows --dart-define=KERNEL_ENDPOINT='https://localhost:59066'.",
+      'DigitalBrain desktop client requires services__kernel__https__0 '
+      '(or --dart-define=KERNEL_ENDPOINT). Set it, e.g. '
+      r"flutter run -d windows --dart-define=KERNEL_ENDPOINT='https://localhost:59066'.",
     );
   }
-  final u = Uri.parse(aspireUrl);
+  final u = Uri.parse(aspireKernelUrl);
   return (u.host, u.port, u.scheme == 'https');
 }
