@@ -228,6 +228,8 @@ class _PanelFrame extends StatelessWidget {
                   data: panel.surface.data,
                   rootWidget: rootWidget,
                   onEvent: onEvent,
+                  semanticsId: panel.id,
+                  semanticsLabel: panel.id,
                 ),
         ),
         // Bottom-right resize grip — dedicated handle avoids gesture conflicts

@@ -556,6 +556,8 @@ widget root = Panel(
       onEvent: (name, args) {
         _handleRfwEvent(key, name, args);
       },
+      semanticsId: key,
+      semanticsLabel: key,
     );
   }
 

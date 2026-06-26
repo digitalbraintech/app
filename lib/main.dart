@@ -1,6 +1,7 @@
 import 'package:digital_brain_sdk_flutter/digital_brain_sdk_flutter.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:media_kit/media_kit.dart';
@@ -17,6 +18,9 @@ import 'package:digitalbrain_flutter/telemetry/telemetry.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb && const bool.fromEnvironment('DIGITALBRAIN_E2E')) {
+    SemanticsBinding.instance.ensureSemantics();
+  }
   GoogleFonts.config.allowRuntimeFetching = true;
   WidgetCensus.glowIconType = GlowIcon;
   if (!kIsWeb) {

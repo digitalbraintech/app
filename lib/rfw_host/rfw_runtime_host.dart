@@ -41,12 +41,20 @@ class RfwRuntimeHost {
     required Map<String, Object?> data,
     required RemoteEventHandler onEvent,
     String rootWidget = 'root',
+    String? semanticsId,
+    String? semanticsLabel,
   }) {
-    return RemoteWidget(
+    final remote = RemoteWidget(
       runtime: _runtime,
       data: DynamicContent(data),
       widget: FullyQualifiedWidgetName(LibraryName(['doc', key]), rootWidget),
       onEvent: onEvent,
+    );
+    return Semantics(
+      identifier: semanticsId ?? key,
+      label: semanticsLabel,
+      container: true,
+      child: remote,
     );
   }
 }
