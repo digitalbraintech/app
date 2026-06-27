@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 
+// MIGRATED: Chat UI is now 100% from neuron-emitted UiWidgetTree using forui kit (see SystemNeurons chat surface).
+// This .dart screen no longer used in active paths.
 class InoChatScreen extends StatefulWidget {
   const InoChatScreen({super.key});
 

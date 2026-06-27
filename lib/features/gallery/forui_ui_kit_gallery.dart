@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 import 'package:go_router/go_router.dart';
 
-/// Separate UI Kit Gallery screen demonstrating ForUI for a clean modern look.
-/// This serves as the dedicated tab/page for the UI kit gallery.
-/// Navigate via router to /ui-kit-gallery.
-/// Mixes ForUI with notes on the existing RFW + graphic chart system.
+// MIGRATED to UI kit: Gallery content emitted as "ui-kit-rich" neuron tree (forui components via renderer).
+// This file deprecated (no longer used in main paths).
 class ForuiUiKitGallery extends StatelessWidget {
   const ForuiUiKitGallery({super.key});
 

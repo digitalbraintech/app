@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 
-import 'models/pack.dart';
-
+// MIGRATED: All UI now via neuron UiSurface / UiWidgetTree + rich ForUI kit (no static screens).
+// This file kept for reference / dev authoring fallback only. Use shell targets for runtime kit.
 class MarketplaceScreen extends StatefulWidget {
   final void Function(String name, Map<String, Object?>) ? onEvent;
 
