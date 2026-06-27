@@ -109,6 +109,10 @@ class UiSurfaceTreeRenderer {
       return FHeader(title: Text(t));
     }
 
+    if (type == 'neuron:divider' || type == 'divider') {
+      return const FDivider();
+    }
+
     if (type == 'rfw') {
       final source = (node['RfwSource'] ?? props['source'])?.toString();
       final root = (node['RfwRoot'] ?? props['root'] ?? 'root').toString();
