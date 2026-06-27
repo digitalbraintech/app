@@ -230,7 +230,7 @@ class UiSurfaceTreeRenderer {
 
   Widget _buildDynamicSidebar(List rawItems, void Function(String)? onNav, String? active) {
     final items = rawItems.cast<Map>();
-    final title = (items.isNotEmpty ? null : null) ?? 'DigitalBrain'; // title comes from server neuron:Header or app-shell props
+    final title = (items.isNotEmpty ? (items.first['title']?.toString() ?? items.first['headerTitle']?.toString() ?? 'DigitalBrain') : 'DigitalBrain');
     return FSidebar(
       header: Padding(
         padding: const EdgeInsets.all(16),
@@ -301,10 +301,13 @@ class UiSurfaceTreeRenderer {
         .cast<Map<String, Object?>>()
         .map((c) => _buildNeuronMenuItem((c['Props'] ?? c['props'] ?? c) as Map<String, Object?>, onEvent, onNav, active))
         .toList();
+    final title = (childrenList.isNotEmpty
+        ? ((childrenList.first as Map)['title']?.toString() ?? (childrenList.first as Map)['headerTitle']?.toString() ?? 'DigitalBrain')
+        : 'DigitalBrain');
     return FSidebar(
       header: Padding(
         padding: const EdgeInsets.all(16),
-        child: Text('DigitalBrain', style: FTheme.of(navigatorKey.currentContext!).typography.lg),
+        child: Text(title, style: FTheme.of(navigatorKey.currentContext!).typography.lg),
       ),
       children: items,
     );
