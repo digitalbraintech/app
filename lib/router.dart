@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'features/canvas/living_canvas_screen.dart';
 import 'features/chat/ino_chat_screen.dart';
 import 'features/gallery/forui_ui_kit_gallery.dart';
+import 'features/marketplace/marketplace_screen.dart';
 import 'features/spike/globe_lottie_spike.dart';
 import 'shell/forui_app_shell.dart';
 
@@ -29,6 +30,11 @@ final digitalbrainRouter = GoRouter(
           path: '/gallery',
           name: 'gallery',
           builder: (context, state) => const ForuiUiKitGallery(),
+        ),
+        GoRoute(
+          path: '/marketplace',
+          name: 'marketplace',
+          builder: (context, state) => const MarketplaceScreen(),
         ),
       ],
     ),

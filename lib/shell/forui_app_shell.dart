@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:go_router/go_router.dart';
 import 'package:digitalbrain_flutter/grpc/digitalbrain.pbgrpc.dart';
 import 'package:digitalbrain_flutter/grpc/endpoint.dart';
 import 'package:digitalbrain_flutter/grpc/grpc_channel.dart';
 import 'package:digitalbrain_flutter/rfw_host/rfw_runtime_host.dart';
+import 'package:digitalbrain_flutter/features/marketplace/marketplace_screen.dart';
 import 'package:digitalbrain_flutter/grpc/digitalbrain.pb.dart' as gw;
 import 'package:digitalbrain_flutter/grpc/uigateway.pbgrpc.dart';
 import 'package:digitalbrain_flutter/grpc/uigateway.pb.dart' as ui;
@@ -109,10 +111,9 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
   }
 
   void _handleSurfaceEvent(String name, Map<String, Object?> args) {
-    // Nav from buttons/links inside dynamic surfaces
     final target = (args['targetSurfaceKind'] ?? args['target'] ?? args['path'])?.toString();
     if (target != null && target.isNotEmpty) {
-      setState(() => _selectedTarget = target);
+      _goTo(target);
     }
     if (name == 'press' || name == 'select' || name == 'action') {
       final action = (args['action'] is Map ? (args['action'] as Map).cast<String, Object?>() : args);
@@ -134,6 +135,32 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
       if (d is Map) return d.map((k, v) => MapEntry(k.toString(), v));
     } catch (_) {}
     return const {};
+  }
+
+  void _goTo(String target) {
+    final t = target.trim().toLowerCase();
+    if (t.isEmpty) return;
+    if (t.contains('market') || t == 'marketplace' || t == '/marketplace') {
+      setState(() => _selectedTarget = 'marketplace');
+      // Also update location for deep links / history, but body driven by target
+      if (GoRouterState.of(context).uri.path != '/marketplace') {
+        context.go('/marketplace');
+      }
+      return;
+    }
+    if (t.contains('gallery') || t == '/gallery') {
+      context.go('/gallery');
+      return;
+    }
+    if (t.contains('chat') || t.contains('ino') || t == '/chat') {
+      context.go('/chat');
+      return;
+    }
+    if (t.startsWith('/')) {
+      context.go(t);
+      return;
+    }
+    setState(() => _selectedTarget = target);
   }
 
   @override
@@ -162,7 +189,7 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
               Map<String, Object?>.from(childMap),
               _handleSurfaceEvent,
               rfwHost: _rfwHost,
-              onNavSelected: (t) => setState(() => _selectedTarget = t),
+              onNavSelected: _goTo,
               activeTarget: _selectedTarget,
             );
           } else if (cType.contains('header')) {
@@ -170,7 +197,7 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
               Map<String, Object?>.from(childMap),
               _handleSurfaceEvent,
               rfwHost: _rfwHost,
-              onNavSelected: (t) => setState(() => _selectedTarget = t),
+              onNavSelected: _goTo,
               activeTarget: _selectedTarget,
             );
           }
@@ -186,7 +213,7 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
             treeNode,
             _handleSurfaceEvent,
             rfwHost: _rfwHost,
-            onNavSelected: (t) => setState(() => _selectedTarget = t),
+            onNavSelected: _goTo,
             activeTarget: _selectedTarget,
           );
           body = SizedBox.expand(child: rendered);
@@ -204,13 +231,57 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
             );
             body = SizedBox.expand(child: rendered);
           } else {
-            // No client-synthesized nodes. Pure host container when no server content.
             body = const SizedBox.shrink();
           }
         }
       } else {
-        // No client synthesis. When no active surface data, empty body (server should provide via tree).
         body = const SizedBox.shrink();
+      }
+
+      final loc = GoRouterState.of(context).uri.path;
+      final isClientRoute = loc == '/marketplace' || loc == '/gallery' || loc == '/chat';
+      if (isClientRoute && widget.child != null && widget.child is! SizedBox) {
+        body = widget.child!;
+      }
+
+      // Migrate Marketplace to backend/neuron UI:
+      // - If a surface with kind 'marketplace' (or matching selected) has arrived from WatchHomeFeed,
+      //   render it using the UiSurfaceTreeRenderer / RFW (neuron-driven layout + data).
+      // - Otherwise fall back to the Dart MarketplaceScreen wired with _handleSurfaceEvent
+      //   so that search, card taps, install etc. are sent as UiInputSynapse to the backend.
+      // This keeps the exact same visual + behavior while making handlers backend-owned.
+      final effectiveTarget = (_selectedTarget ?? '').toLowerCase();
+      if (effectiveTarget.contains('market') || loc == '/marketplace') {
+        final env = _surfacesByKind['marketplace'] ?? _surfacesByKind[_selectedTarget ?? ''];
+        if (env != null) {
+          final data = _decode(env.dataJson);
+          final treeNode = data['tree'] as Map<String, Object?>?;
+          if (treeNode != null) {
+            body = SizedBox.expand(
+              child: renderer.build(
+                treeNode,
+                _handleSurfaceEvent,
+                rfwHost: _rfwHost,
+                onNavSelected: _goTo,
+                activeTarget: _selectedTarget,
+              ),
+            );
+          } else {
+            final source = data['source'] as String?;
+            final root = (data['rootWidget'] as String? ?? data['root'] as String? ?? env.rootWidget).toString();
+            if (source != null && source.isNotEmpty) {
+              final key = env.correlationId.isEmpty ? 'marketplace-surface' : env.correlationId;
+              _rfwHost.ensureLoaded(key, source);
+              body = SizedBox.expand(
+                child: _rfwHost.render(key, data: data, onEvent: _handleSurfaceEvent, rootWidget: root),
+              );
+            }
+          }
+        } else {
+          // No backend surface yet — render the client implementation as the marketplace surface stand-in.
+          // All user actions are dispatched so real backend handlers can take over when present.
+          body = MarketplaceScreen(onEvent: _handleSurfaceEvent);
+        }
       }
 
       return FScaffold(
@@ -220,8 +291,70 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
       );
     }
 
-    // Pure thin host fallback (until shell neuron surface arrives via WatchHomeFeed / UiGateway).
-    // Uses ForUI scaffold + buddy search so UI is never black/empty.
+    final loc = GoRouterState.of(context).uri.path;
+    final useRouteChild = loc != '/' && widget.child != null && widget.child is! SizedBox;
+
+    Widget fallbackBody = useRouteChild ? widget.child! : Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text('DigitalBrain Shell - Fallback UI (waiting for neuron tree)', style: TextStyle(fontSize: 18, color: Colors.white)),
+          const SizedBox(height: 16),
+          FTextField(
+            label: const Text('Search buddies / packs'),
+            hint: 'Type to search',
+          ),
+          const SizedBox(height: 8),
+          ...['DigitalBrain.UIKit.ForUI', 'kernel', 'INO', 'Marketplace', 'Tasks'].map((s) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: FTappable(
+              onPress: () {
+                if (s == 'Marketplace') _goTo('marketplace');
+                if (s == 'INO') context.go('/chat');
+              },
+              child: FCard(title: Text(s)),
+            ),
+          )),
+        ],
+      ),
+    );
+
+    // Marketplace migration to backend UI also applies in pure fallback.
+    // If a marketplace surface arrived (possible even before full shell tree), render it.
+    // Otherwise use the event-wired client MarketplaceScreen so handlers go to backend.
+    final effectiveTarget = (_selectedTarget ?? '').toLowerCase();
+    if (effectiveTarget.contains('market') || loc == '/marketplace') {
+      final env = _surfacesByKind['marketplace'] ?? _surfacesByKind[_selectedTarget ?? ''];
+      if (env != null) {
+        final data = _decode(env.dataJson);
+        final treeNode = data['tree'] as Map<String, Object?>?;
+        if (treeNode != null) {
+          fallbackBody = SizedBox.expand(
+            child: renderer.build(
+              treeNode,
+              _handleSurfaceEvent,
+              rfwHost: _rfwHost,
+              onNavSelected: _goTo,
+              activeTarget: _selectedTarget,
+            ),
+          );
+        } else {
+          final source = data['source'] as String?;
+          final root = (data['rootWidget'] as String? ?? data['root'] as String? ?? env.rootWidget).toString();
+          if (source != null && source.isNotEmpty) {
+            final key = env.correlationId.isEmpty ? 'marketplace-fallback' : env.correlationId;
+            _rfwHost.ensureLoaded(key, source);
+            fallbackBody = SizedBox.expand(
+              child: _rfwHost.render(key, data: data, onEvent: _handleSurfaceEvent, rootWidget: root),
+            );
+          }
+        }
+      } else {
+        fallbackBody = MarketplaceScreen(onEvent: _handleSurfaceEvent);
+      }
+    }
+
     return FScaffold(
       header: const FHeader(title: Text('DigitalBrain')),
       sidebar: FSidebar(
@@ -229,35 +362,15 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Text('Workspace', style: TextStyle(fontSize: 16, color: Color(0xFFE0E0E0))),
         ),
-        children: const [
-          FSidebarItem(label: Text('Marketplace')),
-          FSidebarItem(label: Text('Tasks')),
-          FSidebarItem(label: Text('INO Chat')),
-          FSidebarItem(label: Text('Timeline')),
+        children: [
+          FSidebarItem(label: const Text('Marketplace'), onPress: () => _goTo('marketplace')),
+          FSidebarItem(label: const Text('UI Gallery'), onPress: () => context.go('/gallery')),
+          FSidebarItem(label: const Text('Tasks'), onPress: () {}),
+          FSidebarItem(label: const Text('INO Chat'), onPress: () => context.go('/chat')),
+          FSidebarItem(label: const Text('Timeline'), onPress: () {}),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text('DigitalBrain Shell - Fallback UI (waiting for neuron tree)', style: TextStyle(fontSize: 18, color: Colors.white)),
-            const SizedBox(height: 16),
-            FTextField(
-              label: const Text('Search buddies / packs'),
-              hint: 'Type to search',
-            ),
-            const SizedBox(height: 8),
-            ...['DigitalBrain.UIKit.ForUI', 'kernel', 'INO', 'Marketplace', 'Tasks'].map((s) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: FTappable(
-                onPress: () {},
-                child: FCard(title: Text(s)),
-              ),
-            )),
-          ],
-        ),
-      ),
+      child: fallbackBody,
     );
   }
 }
