@@ -30,10 +30,10 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
   StreamSubscription<ui.UiStateSignal>? _uiSessionSub;
   StreamSubscription<gw.RfwCardEnvelope>? _homeFeedSub;
 
-  // Live data from neurons
-  Map<String, Object?>? _shellTree; // from app-shell or widget-tree surface
-  final Map<String, gw.RfwCardEnvelope> _surfacesByKind = {}; // e.g. "marketplace-list" -> envelope
-  String _selectedTarget = 'marketplace-list'; // default content surface kind
+  // Live data from neurons (minimal state for composition; all chrome/content from neuron trees)
+  Map<String, Object?>? _shellTree;
+  final Map<String, gw.RfwCardEnvelope> _surfacesByKind = {};
+  String? _selectedTarget; // from tree only; no hardcoded default
 
   @override
   void initState() {
@@ -88,7 +88,7 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
     setState(() {
       if (kind == 'app-shell' || kind == 'widget-tree' || data['tree'] != null) {
         _shellTree = data;
-        // Default active content from server-emitted shell tree (top or nested in tree/Props).
+        // Active content strictly from server tree (no client default)
         final ac = data['activeContent']
             ?? (data['tree'] as Map?)?['activeContent']
             ?? ((data['tree'] as Map?)?['Props'] as Map?)?['activeContent'];
@@ -137,9 +137,9 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
     final renderer = const UiSurfaceTreeRenderer();
 
     if (tree != null) {
-      // Sidebar + header from neuron tree (neuron:Menu / neuron:Header / forui children). No navItems fallback.
+      // All chrome (sidebar, header) strictly from neuron tree children. No fallbacks or defaults.
       Widget sidebarWidget = const SizedBox.shrink();
-      Widget headerWidget = FHeader(title: Text((tree['title'] ?? (tree['Props'] as Map?)?['title'] ?? 'DigitalBrain').toString()));
+      Widget headerWidget = FHeader(title: const SizedBox.shrink());
       if (tree['Children'] is List && (tree['Children'] as List).isNotEmpty) {
         for (final c in (tree['Children'] as List)) {
           final childMap = c as Map;
@@ -189,16 +189,9 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
               rootWidget: root,
             );
           } else {
-            // Delegate to renderer machinery for live surface (no direct FCard or text dumps in shell).
-            final node = <String, Object?>{
-              'type': 'fcard',
-              'props': {
-                'title': data['title']?.toString() ?? _selectedTarget,
-                'subtitle': (data['summary'] ?? data['body'] ?? 'Live surface from neuron').toString(),
-              },
-            };
+            // Always delegate to renderer; no client-synthesized nodes or titles.
             body = renderer.build(
-              node,
+              <String, Object?>{'type': 'content-area', 'props': <String, Object?>{}},
               _handleSurfaceEvent,
               rfwHost: _rfwHost,
               onNavSelected: (t) => setState(() => _selectedTarget = t),
@@ -224,17 +217,14 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
       );
     }
 
-    // No legacy hardcoded nav (priority 4). Thin host only. If no live app-shell tree, show waiting via renderer.
-    return FScaffold(
-      sidebar: const SizedBox.shrink(),
-      header: FHeader(title: const Text('DigitalBrain')),
-      child: renderer.build(
-        <String, Object?>{'type': 'content-area', 'props': <String, Object?>{'message': 'Waiting for live app-shell from neuron'}},
-        _handleSurfaceEvent,
-        rfwHost: _rfwHost,
-        onNavSelected: (t) => setState(() => _selectedTarget = t),
-        activeTarget: _selectedTarget,
-      ),
+    // Pure thin host: everything (including chrome) must come from neurons via kit trees or events. No hardcoded titles, messages, chrome or fallbacks.
+    // When no tree, delegate to renderer with minimal app-shell (server will provide full when connected).
+    return renderer.build(
+      <String, Object?>{'type': 'app-shell', 'props': <String, Object?>{}, 'Children': <dynamic>[]},
+      _handleSurfaceEvent,
+      rfwHost: _rfwHost,
+      onNavSelected: (t) => setState(() => _selectedTarget = t),
+      activeTarget: _selectedTarget,
     );
   }
 
