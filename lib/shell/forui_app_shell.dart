@@ -137,13 +137,13 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
     final renderer = const UiSurfaceTreeRenderer();
 
     if (tree != null) {
-      // Prefer building sidebar via the dynamic renderer from the FSidebar child in the tree (full neuron-driven).
+      // Sidebar always from neuron tree (neuron:Menu / forui:FSidebar children or forui). No navItems fallback.
       Widget sidebarWidget = const SizedBox.shrink();
       if (tree['Children'] is List && (tree['Children'] as List).isNotEmpty) {
         for (final c in (tree['Children'] as List)) {
           final childMap = c as Map;
           final cType = (childMap['Type'] ?? childMap['type'] ?? '').toString().toLowerCase();
-          if (cType.contains('sidebar')) {
+          if (cType.contains('sidebar') || cType.contains('menu')) {
             sidebarWidget = renderer.build(
               Map<String, Object?>.from(childMap),
               _handleSurfaceEvent,
@@ -154,11 +154,6 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
             break;
           }
         }
-      }
-      if (sidebarWidget is SizedBox && (tree['navItems'] is List || (tree['Props'] as Map?)?['navItems'] is List)) {
-        // Fallback to data-driven if no child
-        final nav = tree['navItems'] ?? (tree['Props'] as Map?)?['navItems'] ?? const [];
-        sidebarWidget = _buildDynamicSidebarFromData(nav as List);
       }
 
       Widget body;
@@ -236,23 +231,5 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
     );
   }
 
-  Widget _buildDynamicSidebarFromData(List rawItems) {
-    final items = rawItems.cast<Map>();
-    return FSidebar(
-      header: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text('DigitalBrain', style: FTheme.of(context).typography.lg),
-      ),
-      children: items.map((item) {
-        final label = item['label']?.toString() ?? 'Item';
-        final target = (item['targetSurfaceKind'] ?? item['path'] ?? label).toString();
-        return FSidebarItem(
-          label: Text(label),
-          selected: _selectedTarget == target,
-          onPress: () => setState(() => _selectedTarget = target),
-        );
-      }).toList(),
-    );
-  }
 }
 
