@@ -16,7 +16,6 @@ import 'package:digitalbrain_flutter/features/canvas/panel/panel_manager.dart';
 import 'package:digitalbrain_flutter/features/canvas/panel/floating_panel_layer.dart';
 import 'package:digitalbrain_flutter/features/canvas/panel/ui_layout_bridge.dart';
 import 'package:digitalbrain_flutter/rfw_host/rfw_runtime_host.dart';
-import 'package:forui/forui.dart' as forui;
 
 class LivingCanvasScreen extends StatefulWidget {
   const LivingCanvasScreen({super.key});
