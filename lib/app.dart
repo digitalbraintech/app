@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 
 import 'digital_brain_ui/digital_brain_ui.dart';
 import 'router.dart';
 import 'theme/digitalbrain_theme.dart';
+import 'rfw_host/rfw_runtime_host.dart'; // for navigatorKey (surface driven root)
 
 class DigitalBrainApp extends StatelessWidget {
   const DigitalBrainApp({super.key});
@@ -16,9 +18,20 @@ class DigitalBrainApp extends StatelessWidget {
       theme: theme,
       darkTheme: theme,
       routerConfig: digitalbrainRouter,
-      builder: (context, child) => InputModeScope(
-        child: WindowSizeScope(child: child ?? const SizedBox.shrink()),
-      ),
+      // navigatorKey allows UiSurfaceTreeRenderer to access theme when building full app-shell from neuron.
+      builder: (context, child) {
+        final foruiTheme = FThemes.neutral.dark.desktop;
+        return FTheme(
+          data: foruiTheme,
+          child: FToaster(
+            child: FTooltipGroup(
+              child: InputModeScope(
+                child: WindowSizeScope(child: child ?? const SizedBox.shrink()),
+              ),
+            ),
+          ),
+        );
+      },
       debugShowCheckedModeBanner: false,
     );
   }
