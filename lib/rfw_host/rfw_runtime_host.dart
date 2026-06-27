@@ -81,7 +81,30 @@ class UiSurfaceTreeRenderer {
     final props = (node['Props'] ?? node['props'] ?? const <String, Object?>{}) as Map<String, Object?>;
     final childrenList = (node['Children'] ?? node['children'] ?? const []) as List;
 
-    if (type == 'rfw' || type == 'rfw') {
+    // Neuron UI Kit (server-driven only; client is thin renderer). Match exact kit types (from NeuronUiKit in Core).
+    const kitMenu = 'neuron:menu';
+    const kitMenuItem = 'neuron:menuitem';
+    const kitActionBtn = 'neuron:actionbutton';
+    const kitNeuronBtn = 'neuron:neuronbutton';
+    if (type == kitMenu || type == 'neuron:sidebar') {
+      return _buildNeuronMenu(props, childrenList, onEvent, rfwHost, onNavSelected, activeTarget);
+    }
+    if (type == kitMenuItem || type == 'neuron:menu-item') {
+      return _buildNeuronMenuItem(props, onEvent, onNavSelected, activeTarget);
+    }
+    if (type == kitActionBtn || type == kitNeuronBtn || type == 'neuron:button') {
+      final label = (props['label'] ?? props['text'] ?? 'Action').toString();
+      return FButton(
+        onPress: () {
+          onEvent('press', {'label': label, ...props});
+          final t = (props['targetSurfaceKind'] ?? props['target'])?.toString();
+          if (t != null && t.isNotEmpty) onNavSelected?.call(t);
+        },
+        child: Text(label),
+      );
+    }
+
+    if (type == 'rfw') {
       final source = (node['RfwSource'] ?? props['source'])?.toString();
       final root = (node['RfwRoot'] ?? props['root'] ?? 'root').toString();
       final data = (props['data'] ?? const <String, Object?>{}) as Map<String, Object?>;
@@ -100,14 +123,14 @@ class UiSurfaceTreeRenderer {
       for (final child in childrenList) {
         final c = child as Map<String, Object?>;
         final cType = (c['Type'] ?? c['type'] ?? '').toString().toLowerCase();
-        if (cType.contains('sidebar')) {
+        if (cType.contains('sidebar') || cType.contains('menu')) {
           sidebarWidget = build(c, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget);
         } else {
           body = build(c, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget);
         }
       }
 
-      if (props.containsKey('navItems')) {
+      if (sidebarWidget is SizedBox && props.containsKey('navItems')) {
         sidebarWidget = _buildDynamicSidebar(props['navItems'] as List? ?? const [], onNavSelected, activeTarget);
       }
 
@@ -119,6 +142,10 @@ class UiSurfaceTreeRenderer {
     }
 
     if (type.contains('sidebar')) {
+      // Prefer children (Neuron UI Kit MenuItems or forui items) for full server-driven shell.
+      if (childrenList.isNotEmpty) {
+        return _buildSidebarFromChildren(childrenList, onEvent, onNavSelected, activeTarget);
+      }
       final items = (props['navItems'] ?? const []) as List;
       return _buildDynamicSidebar(items, onNavSelected, activeTarget);
     }
@@ -203,10 +230,11 @@ class UiSurfaceTreeRenderer {
 
   Widget _buildDynamicSidebar(List rawItems, void Function(String)? onNav, String? active) {
     final items = rawItems.cast<Map>();
+    final title = (items.isNotEmpty ? null : null) ?? 'DigitalBrain'; // title comes from server neuron:Header or app-shell props
     return FSidebar(
       header: Padding(
         padding: const EdgeInsets.all(16),
-        child: Text('DigitalBrain', style: FTheme.of(navigatorKey.currentContext!).typography.lg),
+        child: Text(title, style: FTheme.of(navigatorKey.currentContext!).typography.lg),
       ),
       children: items.map((item) {
         final label = item['label']?.toString() ?? 'Item';
@@ -217,6 +245,68 @@ class UiSurfaceTreeRenderer {
           onPress: () => onNav?.call(target),
         );
       }).toList(),
+    );
+  }
+
+  Widget _buildNeuronMenu(
+    Map<String, Object?> props,
+    List childrenList,
+    RemoteEventHandler onEvent,
+    RfwRuntimeHost rfwHost,
+    void Function(String targetKind)? onNavSelected,
+    String? activeTarget,
+  ) {
+    final title = (props['title'] ?? props['headerTitle'] ?? 'DigitalBrain').toString();
+    final menuChildren = childrenList.isNotEmpty
+        ? childrenList
+            .cast<Map<String, Object?>>()
+            .map((c) => build(c, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget))
+            .toList()
+        : const <Widget>[];
+    return FSidebar(
+      header: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(title, style: FTheme.of(navigatorKey.currentContext!).typography.lg),
+      ),
+      children: menuChildren.cast<Widget>(),
+    );
+  }
+
+  Widget _buildNeuronMenuItem(
+    Map<String, Object?> props,
+    RemoteEventHandler onEvent,
+    void Function(String)? onNav,
+    String? active,
+  ) {
+    final label = (props['label'] ?? props['text'] ?? 'Item').toString();
+    final target = (props['targetSurfaceKind'] ?? props['target'] ?? props['path'] ?? label).toString();
+    final isSel = active == target;
+    return FSidebarItem(
+      label: Text(label),
+      selected: isSel,
+      onPress: () {
+        onEvent('press', {'label': label, 'targetSurfaceKind': target, ...props});
+        onNav?.call(target);
+      },
+    );
+  }
+
+  Widget _buildSidebarFromChildren(
+    List childrenList,
+    RemoteEventHandler onEvent,
+    void Function(String)? onNav,
+    String? active,
+  ) {
+    final items = childrenList
+        .cast<Map<String, Object?>>()
+        .map((c) => _buildNeuronMenuItem((c['Props'] ?? c['props'] ?? c) as Map<String, Object?>, onEvent, onNav, active))
+        .toList();
+    return FSidebar(
+      header: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text('DigitalBrain', style: FTheme.of(navigatorKey.currentContext!).typography.lg),
+      ),
+      children: items,
     );
   }
 }
