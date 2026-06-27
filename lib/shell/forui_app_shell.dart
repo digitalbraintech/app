@@ -137,8 +137,9 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
     final renderer = const UiSurfaceTreeRenderer();
 
     if (tree != null) {
-      // Sidebar always from neuron tree (neuron:Menu / forui:FSidebar children or forui). No navItems fallback.
+      // Sidebar + header from neuron tree (neuron:Menu / neuron:Header / forui children). No navItems fallback.
       Widget sidebarWidget = const SizedBox.shrink();
+      Widget headerWidget = FHeader(title: Text((tree['title'] ?? (tree['Props'] as Map?)?['title'] ?? 'DigitalBrain').toString()));
       if (tree['Children'] is List && (tree['Children'] as List).isNotEmpty) {
         for (final c in (tree['Children'] as List)) {
           final childMap = c as Map;
@@ -151,7 +152,14 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
               onNavSelected: (t) => setState(() => _selectedTarget = t),
               activeTarget: _selectedTarget,
             );
-            break;
+          } else if (cType.contains('header')) {
+            headerWidget = renderer.build(
+              Map<String, Object?>.from(childMap),
+              _handleSurfaceEvent,
+              rfwHost: _rfwHost,
+              onNavSelected: (t) => setState(() => _selectedTarget = t),
+              activeTarget: _selectedTarget,
+            );
           }
         }
       }
@@ -209,10 +217,9 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
         );
       }
 
-      final title = (tree['title'] ?? (tree['Props'] as Map?)?['title'] ?? 'DigitalBrain').toString();
       return FScaffold(
         sidebar: sidebarWidget,
-        header: FHeader(title: Text(title)),
+        header: headerWidget,
         child: body,
       );
     }
