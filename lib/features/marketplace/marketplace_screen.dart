@@ -18,11 +18,14 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   late final List<String> _allPackNames;
 
   // Dev authoring state for dogfooding: develop DigitalBrain using DigitalBrain + UI
+  // Code must be valid C# implementing DigitalBrain.Core.IPackBehavior (Respond + optional manifest).
+  // After Publish+Install it embodies via Roslyn+ALC, appears in Installed launcher, Open/Run exercise it + can emit surfaces.
   String _devPackName = 'My.DevFeature';
   String _devCode = '''
-public sealed class MyDevFeature : DigitalBrain.Core.Distribution.IPackBehavior
+public sealed class MyDevFeature : DigitalBrain.Core.IPackBehavior
 {
     public string Respond(string input) => "Dev feature handled: " + (input ?? "");
+    // To support custom synapses override GetManifest() and Handle() returning PackEmission or UiSurface etc.
 }
 ''';
 
@@ -157,6 +160,15 @@ public sealed class MyDevFeature : DigitalBrain.Core.Distribution.IPackBehavior
           owner: 'core',
           installed: true,
           tags: ['kernel', 'security'],
+        ),
+        // Seed for self-dev scenario: a pack you can "re-develop" from the UI authoring card and re-publish
+        Pack(
+          name: 'Dummy.DevPack',
+          version: '1.0.0-dev',
+          description: 'Example behavior pack for dogfooding development inside the running DigitalBrain + UI.',
+          owner: 'self-dev',
+          installed: false,
+          tags: ['dev', 'self'],
         ),
       ];
 
@@ -310,9 +322,10 @@ public sealed class MyDevFeature : DigitalBrain.Core.Distribution.IPackBehavior
                 Row(children: [
                   FButton(
                     onPress: () {
+                      final name = _devPackName.isEmpty ? 'My.DevFeature' : _devPackName;
                       _dispatch('publish', {
                         'synapseType': 'PublishToMarketplace',
-                        'packName': _devPackName.isEmpty ? 'My.DevFeature' : _devPackName,
+                        'packName': name,
                         'version': '1.0.0-dev',
                         'code': _devCode,
                         'ownerId': 'self-dev',
@@ -320,7 +333,28 @@ public sealed class MyDevFeature : DigitalBrain.Core.Distribution.IPackBehavior
                         'commissionRate': 0.05,
                         'description': 'Authored live inside DigitalBrain UI',
                       });
-                      _dispatch('action', {'action': 'list', 'kind': 'marketplace'});
+                      // Chain install so server emits InstalledBundles surface including the new pack (appears in launcher).
+                      Future.microtask(() {
+                        _dispatch('action', {
+                          'synapseType': 'InstallFromMarketplace',
+                          'packName': name,
+                          'version': '1.0.0-dev',
+                          'buyerId': 'self-dev',
+                        });
+                      });
+                      setState(() {
+                        if (!_packs.any((p) => p.name == name)) {
+                          _packs.insert(0, Pack(
+                            name: name,
+                            version: '1.0.0-dev',
+                            description: 'Self-developed pack (published from this UI)',
+                            owner: 'self-dev',
+                            installed: true,
+                            tags: ['dev', 'self'],
+                          ));
+                          if (!_allPackNames.contains(name)) _allPackNames.insert(0, name);
+                        }
+                      });
                     },
                     child: const Text('Publish Dev Pack'),
                   ),

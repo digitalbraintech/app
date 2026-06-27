@@ -7,7 +7,6 @@ import 'package:digitalbrain_flutter/grpc/digitalbrain.pbgrpc.dart';
 import 'package:digitalbrain_flutter/grpc/endpoint.dart';
 import 'package:digitalbrain_flutter/grpc/grpc_channel.dart';
 import 'package:digitalbrain_flutter/rfw_host/rfw_runtime_host.dart';
-import 'package:digitalbrain_flutter/features/marketplace/marketplace_screen.dart';
 import 'package:digitalbrain_flutter/grpc/digitalbrain.pb.dart' as gw;
 import 'package:digitalbrain_flutter/grpc/uigateway.pbgrpc.dart';
 import 'package:digitalbrain_flutter/grpc/uigateway.pb.dart' as ui;
@@ -86,6 +85,23 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
     if (!mounted) return;
     final data = _decode(envelope.dataJson);
     final kind = (data['kind'] ?? data['surfaceKind'] ?? '').toString();
+
+    // Runtime-only ForUI notification from neuron/synapse (no static Flutter view).
+    // Neuron emits UiSurface(kind: "toast" | "notification") with title/description.
+    if (kind == 'toast' || kind == 'notification' || kind.contains('toast')) {
+      final titleText = (data['title'] ?? data['message'] ?? 'Hello World!').toString();
+      final descText = data['description']?.toString();
+      Future.microtask(() {
+        if (mounted) {
+          showFToast(
+            context: context,
+            title: Text(titleText),
+            description: descText != null ? Text(descText) : null,
+            duration: const Duration(seconds: 4),
+          );
+        }
+      });
+    }
 
     setState(() {
       final treeNode = data['tree'] as Map?;
@@ -239,17 +255,8 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
       }
 
       final loc = GoRouterState.of(context).uri.path;
-      final isClientRoute = loc == '/marketplace' || loc == '/gallery' || loc == '/chat';
-      if (isClientRoute && widget.child != null && widget.child is! SizedBox) {
-        body = widget.child!;
-      }
 
-      // Migrate Marketplace to backend/neuron UI:
-      // - If a surface with kind 'marketplace' (or matching selected) has arrived from WatchHomeFeed,
-      //   render it using the UiSurfaceTreeRenderer / RFW (neuron-driven layout + data).
-      // - Otherwise fall back to the Dart MarketplaceScreen wired with _handleSurfaceEvent
-      //   so that search, card taps, install etc. are sent as UiInputSynapse to the backend.
-      // This keeps the exact same visual + behavior while making handlers backend-owned.
+      // All UI is 100% from neuron trees / kit. No more .dart screens.
       final effectiveTarget = (_selectedTarget ?? '').toLowerCase();
       if (effectiveTarget.contains('market') || loc == '/marketplace') {
         final env = _surfacesByKind['marketplace'] ?? _surfacesByKind[_selectedTarget ?? ''];
@@ -278,9 +285,7 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
             }
           }
         } else {
-          // No backend surface yet — render the client implementation as the marketplace surface stand-in.
-          // All user actions are dispatched so real backend handlers can take over when present.
-          body = MarketplaceScreen(onEvent: _handleSurfaceEvent);
+          body = const Center(child: Text('Marketplace (neuron kit tree)'));
         }
       }
 
@@ -292,37 +297,15 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
     }
 
     final loc = GoRouterState.of(context).uri.path;
-    final useRouteChild = loc != '/' && widget.child != null && widget.child is! SizedBox;
 
-    Widget fallbackBody = useRouteChild ? widget.child! : Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text('DigitalBrain Shell - Fallback UI (waiting for neuron tree)', style: TextStyle(fontSize: 18, color: Colors.white)),
-          const SizedBox(height: 16),
-          FTextField(
-            label: const Text('Search buddies / packs'),
-            hint: 'Type to search',
-          ),
-          const SizedBox(height: 8),
-          ...['DigitalBrain.UIKit.ForUI', 'kernel', 'INO', 'Marketplace', 'Tasks'].map((s) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: FTappable(
-              onPress: () {
-                if (s == 'Marketplace') _goTo('marketplace');
-                if (s == 'INO') context.go('/chat');
-              },
-              child: FCard(title: Text(s)),
-            ),
-          )),
-        ],
-      ),
+    // Pure minimal fallback. Real UI (nav, content, all screens) comes exclusively from neuron-emitted UiWidgetTree / kit.
+    Widget fallbackBody = const Center(
+      child: Text('Waiting for full neuron tree (UI kit from synapses)'),
     );
 
     // Marketplace migration to backend UI also applies in pure fallback.
     // If a marketplace surface arrived (possible even before full shell tree), render it.
-    // Otherwise use the event-wired client MarketplaceScreen so handlers go to backend.
+    // Marketplace is now fully from neuron-emitted UiWidgetTree using rich forui kit (no static screen).
     final effectiveTarget = (_selectedTarget ?? '').toLowerCase();
     if (effectiveTarget.contains('market') || loc == '/marketplace') {
       final env = _surfacesByKind['marketplace'] ?? _surfacesByKind[_selectedTarget ?? ''];
@@ -351,25 +334,37 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
           }
         }
       } else {
-        fallbackBody = MarketplaceScreen(onEvent: _handleSurfaceEvent);
+        fallbackBody = const Center(child: Text('Marketplace (neuron kit tree - use dev authoring via dispatch or MCP)'));
+      }
+    }
+    if (effectiveTarget.contains('install') || effectiveTarget.contains('bundle') || loc == '/installed') {
+      gw.RfwCardEnvelope? env = _surfacesByKind['installed-bundles'] ?? _surfacesByKind[_selectedTarget ?? ''];
+      if (env == null) {
+        for (final e in _surfacesByKind.values) {
+          final dk = _decode(e.dataJson)['kind']?.toString() ?? '';
+          if (dk.contains('install') || dk.contains('bundle')) { env = e; break; }
+        }
+      }
+      if (env != null) {
+        final data = _decode(env.dataJson);
+        final treeNode = data['tree'] as Map<String, Object?>?;
+        if (treeNode != null) {
+          fallbackBody = SizedBox.expand(
+            child: renderer.build(
+              treeNode,
+              _handleSurfaceEvent,
+              rfwHost: _rfwHost,
+              onNavSelected: _goTo,
+              activeTarget: _selectedTarget,
+            ),
+          );
+        }
       }
     }
 
     return FScaffold(
       header: const FHeader(title: Text('DigitalBrain')),
-      sidebar: FSidebar(
-        header: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Text('Workspace', style: TextStyle(fontSize: 16, color: Color(0xFFE0E0E0))),
-        ),
-        children: [
-          FSidebarItem(label: const Text('Marketplace'), onPress: () => _goTo('marketplace')),
-          FSidebarItem(label: const Text('UI Gallery'), onPress: () => context.go('/gallery')),
-          FSidebarItem(label: const Text('Tasks'), onPress: () {}),
-          FSidebarItem(label: const Text('INO Chat'), onPress: () => context.go('/chat')),
-          FSidebarItem(label: const Text('Timeline'), onPress: () {}),
-        ],
-      ),
+      sidebar: const SizedBox.shrink(), // sidebar + nav fully from emitted shell tree (neuron kit)
       child: fallbackBody,
     );
   }

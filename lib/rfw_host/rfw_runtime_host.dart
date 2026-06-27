@@ -121,6 +121,42 @@ class UiSurfaceTreeRenderer {
       return _buildForuiAutocomplete(props, onEvent);
     }
 
+    if (type == 'forui:ftextfield' || type == 'forui:textfield' || type.contains('textfield')) {
+      final label = (props['label'] ?? props['hint'] ?? '').toString();
+      final hint = (props['hint'] ?? props['placeholder'] ?? label).toString();
+      return FTextField(
+        label: Text(label),
+        hint: hint,
+      );
+    }
+
+    if (type == 'forui:fselect' || type == 'forui:select' || type.contains('select')) {
+      final itemsRaw = props['items'] ?? const <Object>[];
+      final items = itemsRaw is List ? itemsRaw.map((e) => e.toString()).toList() : <String>[];
+      final label = (props['label'] ?? 'Select').toString();
+      return FSelect(
+        label: Text(label),
+        items: {for (final i in items) i: i},
+      );
+    }
+
+    if (type == 'forui:fbutton' || type == 'forui:button' || type == 'button') {
+      final label = (props['label'] ?? props['text'] ?? '').toString();
+      final variantStr = (props['variant'] ?? 'primary').toString().toLowerCase();
+      var variant = FButtonVariant.primary;
+      if (variantStr.contains('outline')) variant = FButtonVariant.outline;
+      if (variantStr.contains('destructive')) variant = FButtonVariant.destructive;
+      return FButton(
+        variant: variant,
+        onPress: () {
+          onEvent('press', {'label': label, ...props});
+          final t = (props['targetSurfaceKind'] ?? props['target'])?.toString();
+          if (t != null && t.isNotEmpty) onNavSelected?.call(t);
+        },
+        child: Text(label),
+      );
+    }
+
     if (type == 'rfw') {
       final source = (node['RfwSource'] ?? props['source'])?.toString();
       final root = (node['RfwRoot'] ?? props['root'] ?? 'root').toString();
