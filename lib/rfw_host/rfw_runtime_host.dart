@@ -104,6 +104,11 @@ class UiSurfaceTreeRenderer {
       );
     }
 
+    if (type == 'neuron:header' || type == 'header') {
+      final t = (props['title'] ?? props['text'] ?? props['label'] ?? 'DigitalBrain').toString();
+      return FHeader(title: Text(t));
+    }
+
     if (type == 'rfw') {
       final source = (node['RfwSource'] ?? props['source'])?.toString();
       final root = (node['RfwRoot'] ?? props['root'] ?? 'root').toString();
@@ -118,6 +123,7 @@ class UiSurfaceTreeRenderer {
 
     if (type == 'app-shell' || type == 'appshell') {
       Widget sidebarWidget = const SizedBox.shrink();
+      Widget headerWidget = FHeader(title: Text((props['title'] ?? 'DigitalBrain').toString()));
       Widget body = const Center(child: Text('No content surface'));
 
       for (final child in childrenList) {
@@ -125,6 +131,8 @@ class UiSurfaceTreeRenderer {
         final cType = (c['Type'] ?? c['type'] ?? '').toString().toLowerCase();
         if (cType.contains('sidebar') || cType.contains('menu')) {
           sidebarWidget = build(c, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget);
+        } else if (cType.contains('header')) {
+          headerWidget = build(c, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget);
         } else {
           body = build(c, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget);
         }
@@ -136,7 +144,7 @@ class UiSurfaceTreeRenderer {
 
       return FScaffold(
         sidebar: sidebarWidget,
-        header: FHeader(title: Text((props['title'] ?? 'DigitalBrain').toString())),
+        header: headerWidget,
         child: body,
       );
     }
