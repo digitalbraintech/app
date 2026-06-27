@@ -222,39 +222,17 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
       );
     }
 
-    // Legacy fallback while we transition
-    final theme = FTheme.of(context);
+    // No legacy hardcoded nav (priority 4). Thin host only. If no live app-shell tree, show waiting via renderer.
     return FScaffold(
-      sidebar: FSidebar(
-        header: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Row(children: [const Icon(Icons.account_tree, size: 22), const SizedBox(width: 8), Text('DigitalBrain', style: theme.typography.lg)]),
-        ),
-        children: [
-          _buildGroup('Main', [
-            _Item('Marketplace', 'marketplace-list'),
-            _Item('Tasks', 'task-manager'),
-            _Item('Timeline', 'timeline'),
-            _Item('INO', 'chat'),
-          ]),
-        ],
+      sidebar: const SizedBox.shrink(),
+      header: FHeader(title: const Text('DigitalBrain')),
+      child: renderer.build(
+        <String, Object?>{'type': 'content-area', 'props': <String, Object?>{'message': 'Waiting for live app-shell from neuron'}},
+        _handleSurfaceEvent,
+        rfwHost: _rfwHost,
+        onNavSelected: (t) => setState(() => _selectedTarget = t),
+        activeTarget: _selectedTarget,
       ),
-      header: FHeader(title: const Text('DigitalBrain (legacy)')),
-      child: widget.child ?? const Center(child: Text('Select from dynamic nav')),
-    );
-  }
-
-  Widget _buildGroup(String label, List<_Item> items) {
-    return FSidebarGroup(
-      label: Text(label),
-      children: items.map((it) {
-        final sel = _selectedTarget == it.target;
-        return FSidebarItem(
-          label: Text(it.label),
-          selected: sel,
-          onPress: () => setState(() => _selectedTarget = it.target),
-        );
-      }).toList(),
     );
   }
 
@@ -276,11 +254,5 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
       }).toList(),
     );
   }
-}
-
-class _Item {
-  final String label;
-  final String target;
-  _Item(this.label, this.target);
 }
 

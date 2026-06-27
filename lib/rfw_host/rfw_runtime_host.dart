@@ -160,8 +160,8 @@ class UiSurfaceTreeRenderer {
           final m = rawItem is Map<String, Object?> ? rawItem : <String, Object?>{'label': rawItem.toString()};
           final lbl = (m['label'] ?? m['text'] ?? m['title'] ?? 'Item').toString();
           final sub = (m['subtitle'] ?? m['description'] ?? m['summary'] ?? '').toString();
-          return GestureDetector(
-            onTap: () {
+          return FTappable(
+            onPress: () {
               onEvent('select', m);
               final t = (m['targetSurfaceKind'] ?? m['target'] ?? m['path'])?.toString();
               if (t != null && t.isNotEmpty) onNavSelected?.call(t);
