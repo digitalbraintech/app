@@ -86,12 +86,19 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
     final kind = (data['kind'] ?? data['surfaceKind'] ?? '').toString();
 
     setState(() {
-      if (kind == 'app-shell' || kind == 'widget-tree' || data['tree'] != null) {
+      final treeNode = data['tree'] as Map?;
+      final hasShellMarker = kind == 'app-shell' || kind == 'widget-tree' || kind.contains('shell') || data['activeContent'] != null;
+      final treeLooksLikeShell = treeNode != null && (
+        treeNode['activeContent'] != null ||
+        (treeNode['Props'] as Map?)?['activeContent'] != null ||
+        (treeNode['Type']?.toString().toLowerCase().contains('scaffold') ?? false) ||
+        (treeNode['Type']?.toString().toLowerCase() == 'app-shell')
+      );
+      if (hasShellMarker || treeLooksLikeShell) {
         _shellTree = data;
-        // Active content strictly from server tree (no client default)
         final ac = data['activeContent']
-            ?? (data['tree'] as Map?)?['activeContent']
-            ?? ((data['tree'] as Map?)?['Props'] as Map?)?['activeContent'];
+            ?? (treeNode)?['activeContent']
+            ?? ((treeNode)?['Props'] as Map?)?['activeContent'];
         if (ac is String && ac.isNotEmpty) {
           _selectedTarget = ac;
         }
@@ -138,10 +145,16 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
 
     if (tree != null) {
       // All chrome (sidebar, header) strictly from neuron tree children. No fallbacks or defaults.
+      // Unwrap if the data is {tree: {Type: scaffold, Children: ...}} from widget-tree rfw.
+      var root = tree;
+      if (tree['tree'] is Map<String, Object?>) {
+        root = (tree['tree'] as Map<String, Object?>).cast<String, Object?>();
+      }
       Widget sidebarWidget = const SizedBox.shrink();
       Widget headerWidget = FHeader(title: const SizedBox.shrink());
-      if (tree['Children'] is List && (tree['Children'] as List).isNotEmpty) {
-        for (final c in (tree['Children'] as List)) {
+      final children = root['Children'] ?? (root['Props'] as Map?)?['Children'];
+      if (children is List && children.isNotEmpty) {
+        for (final c in children) {
           final childMap = c as Map;
           final cType = (childMap['Type'] ?? childMap['type'] ?? '').toString().toLowerCase();
           if (cType.contains('sidebar') || cType.contains('menu')) {
@@ -169,25 +182,27 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
         final data = _decode(activeEnvelope.dataJson);
         final treeNode = data['tree'] as Map<String, Object?>?;
         if (treeNode != null) {
-          body = renderer.build(
+          final rendered = renderer.build(
             treeNode,
             _handleSurfaceEvent,
             rfwHost: _rfwHost,
             onNavSelected: (t) => setState(() => _selectedTarget = t),
             activeTarget: _selectedTarget,
           );
+          body = SizedBox.expand(child: rendered);
         } else {
           final source = data['source'] as String?;
           final root = (data['rootWidget'] as String? ?? data['root'] as String? ?? activeEnvelope.rootWidget).toString();
           if (source != null && source.isNotEmpty) {
             final key = activeEnvelope.correlationId.isEmpty ? 'shell-content-$_selectedTarget' : activeEnvelope.correlationId;
             _rfwHost.ensureLoaded(key, source);
-            body = _rfwHost.render(
+            final rendered = _rfwHost.render(
               key,
               data: data,
               onEvent: _handleSurfaceEvent,
               rootWidget: root,
             );
+            body = SizedBox.expand(child: rendered);
           } else {
             // No client-synthesized nodes. Pure host container when no server content.
             body = const SizedBox.shrink();
@@ -205,13 +220,45 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
       );
     }
 
-    // Pure thin host: no client-defined tree shapes, chrome, titles or messages at all. Neurons provide 100% via kit trees when connected.
+    // Pure thin host fallback (until shell neuron surface arrives via WatchHomeFeed / UiGateway).
+    // Uses ForUI scaffold + buddy search so UI is never black/empty.
     return FScaffold(
-      sidebar: const SizedBox.shrink(),
-      header: FHeader(title: const SizedBox.shrink()),
-      child: const SizedBox.shrink(),
+      header: const FHeader(title: Text('DigitalBrain')),
+      sidebar: FSidebar(
+        header: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Text('Workspace', style: TextStyle(fontSize: 16, color: Color(0xFFE0E0E0))),
+        ),
+        children: const [
+          FSidebarItem(label: Text('Marketplace')),
+          FSidebarItem(label: Text('Tasks')),
+          FSidebarItem(label: Text('INO Chat')),
+          FSidebarItem(label: Text('Timeline')),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text('DigitalBrain Shell - Fallback UI (waiting for neuron tree)', style: TextStyle(fontSize: 18, color: Colors.white)),
+            const SizedBox(height: 16),
+            FTextField(
+              label: const Text('Search buddies / packs'),
+              hint: 'Type to search',
+            ),
+            const SizedBox(height: 8),
+            ...['DigitalBrain.UIKit.ForUI', 'kernel', 'INO', 'Marketplace', 'Tasks'].map((s) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: FTappable(
+                onPress: () {},
+                child: FCard(title: Text(s)),
+              ),
+            )),
+          ],
+        ),
+      ),
     );
   }
-
 }
 

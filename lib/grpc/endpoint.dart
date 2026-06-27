@@ -15,7 +15,7 @@ import 'package:digitalbrain_flutter/telemetry/platform_env.dart';
   }
 
   const configured = String.fromEnvironment('KERNEL_ENDPOINT');
-  final aspireUrl = kIsWeb ? null : getEnv('services__kernel__https__0');
+  final aspireUrl = kIsWeb ? null : getEnv('services__kernel__https__0') ?? getEnv('services__kernel__http__0') ?? getEnv('services__kernel__web__0') ?? getEnv('services__kernel__grpc__0');
 
   return resolveEndpointFrom(
     isWeb: kIsWeb,

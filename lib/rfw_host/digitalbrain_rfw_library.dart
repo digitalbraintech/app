@@ -265,7 +265,7 @@ Widget _stack(BuildContext c, DataSource s, Axis axis) {
     crossAxisAlignment: cross,
     mainAxisAlignment: main,
     mainAxisSize: MainAxisSize.min,
-    children: children.map((c) => Flexible(child: c, fit: FlexFit.loose)).toList(),
+    children: children.map((c) => Flexible(fit: FlexFit.loose, child: c)).toList(),
   );
   // A Row that stretches its children on the cross (vertical) axis needs a
   // bounded height. RFW content renders inside an unbounded scroll viewport,
@@ -2231,8 +2231,9 @@ class _CodeEditorBodyState extends State<_CodeEditorBody> {
   }
 
   Widget _buildCompileDiagnosticsConsole() {
-    if (_compileStatus != 'error' || _compileErrors.isEmpty)
+    if (_compileStatus != 'error' || _compileErrors.isEmpty) {
       return const SizedBox.shrink();
+    }
 
     return Padding(
       padding: const EdgeInsets.only(top: 12),
@@ -3602,9 +3603,9 @@ class _SynapseRowWidgetState extends State<_SynapseRowWidget> {
       if (textVal.isEmpty) continue;
 
       dynamic val = textVal;
-      if (textVal.toLowerCase() == 'true')
+      if (textVal.toLowerCase() == 'true') {
         val = true;
-      else if (textVal.toLowerCase() == 'false')
+      } else if (textVal.toLowerCase() == 'false')
         val = false;
       else if (int.tryParse(textVal) != null)
         val = int.parse(textVal);
@@ -3683,16 +3684,7 @@ class _SynapseRowWidgetState extends State<_SynapseRowWidget> {
   String _generateGuid() {
     final rand = math.Random();
     String hexDigit(int index) => rand.nextInt(16).toRadixString(16);
-    return List.generate(8, hexDigit).join() +
-        '-' +
-        List.generate(4, hexDigit).join() +
-        '-4' +
-        List.generate(3, hexDigit).join() +
-        '-' +
-        (rand.nextInt(4) + 8).toRadixString(16) +
-        List.generate(3, hexDigit).join() +
-        '-' +
-        List.generate(12, hexDigit).join();
+    return '${List.generate(8, hexDigit).join()}-${List.generate(4, hexDigit).join()}-4${List.generate(3, hexDigit).join()}-${(rand.nextInt(4) + 8).toRadixString(16)}${List.generate(3, hexDigit).join()}-${List.generate(12, hexDigit).join()}';
   }
 
   @override
@@ -3840,7 +3832,7 @@ class _SynapseRowWidgetState extends State<_SynapseRowWidget> {
                         ],
                       ),
                     );
-                  }).toList(),
+                  }),
                   const SizedBox(height: 10),
                   Align(
                     alignment: Alignment.centerRight,
@@ -4156,8 +4148,9 @@ class _LlmSettingsPanelBodyState extends State<_LlmSettingsPanelBody> {
       if (model != null) _model = model;
       if (temp != null) _temp = temp;
       if (attempts != null) _attempts = attempts;
-      if (replaceSpheresWithIcons != null)
+      if (replaceSpheresWithIcons != null) {
         _replaceSpheresWithIcons = replaceSpheresWithIcons;
+      }
       if (showSynapses != null) _showSynapses = showSynapses;
       if (localAiMode != null) _localAiMode = localAiMode;
     });
@@ -4387,7 +4380,7 @@ class _LlmSettingsPanelBodyState extends State<_LlmSettingsPanelBody> {
               ),
               Switch(
                 value: _replaceSpheresWithIcons,
-                activeColor: DigitalBrainColors.indigoSoft,
+                activeThumbColor: DigitalBrainColors.indigoSoft,
                 activeTrackColor: DigitalBrainColors.indigoDeep.withValues(
                   alpha: 0.4,
                 ),
@@ -4413,7 +4406,7 @@ class _LlmSettingsPanelBodyState extends State<_LlmSettingsPanelBody> {
               ),
               Switch(
                 value: _showSynapses,
-                activeColor: DigitalBrainColors.teal,
+                activeThumbColor: DigitalBrainColors.teal,
                 activeTrackColor: DigitalBrainColors.teal.withValues(
                   alpha: 0.4,
                 ),
@@ -4439,7 +4432,7 @@ class _LlmSettingsPanelBodyState extends State<_LlmSettingsPanelBody> {
               ),
               Switch(
                 value: _localAiMode,
-                activeColor: DigitalBrainColors.gold,
+                activeThumbColor: DigitalBrainColors.gold,
                 activeTrackColor: DigitalBrainColors.gold.withValues(
                   alpha: 0.4,
                 ),
@@ -4684,7 +4677,7 @@ class _ScenariosTabBodyState extends State<_ScenariosTabBody> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: _scenarios.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            separatorBuilder: (_, _) => const SizedBox(height: 12),
             itemBuilder: (ctx, idx) {
               final s = _scenarios[idx];
               Color borderCol = DigitalBrainColors.hairline;
@@ -5182,7 +5175,7 @@ class _NeuronDebuggerTabBodyState extends State<_NeuronDebuggerTabBody>
             ),
             child: ListView.separated(
               itemCount: _logs.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 6),
+              separatorBuilder: (_, _) => const SizedBox(height: 6),
               itemBuilder: (ctx, idx) {
                 final l = _logs[idx];
                 final isErr = l.startsWith('Error:');

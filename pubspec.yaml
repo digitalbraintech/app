@@ -26,6 +26,8 @@ dependencies:
   # Server-driven UI: render Creator-emitted widget documents at runtime
   # over a fixed, DigitalBrain-themed widget dictionary (no client rebuild).
   rfw: ^1.0.0
+  graphic: ^2.7.0
+  forui: ^0.21.3
   # Widget-canvas redesign palette + window manager (docs/redesign).
   # Panel chrome is hand-rolled (generic Dart shell, 01-ARCHITECTURE Decision 3)
   # rather than a low-trust floating-panel package; persistence via prefs.
@@ -43,14 +45,12 @@ dependencies:
   digital_brain_sdk_flutter:
     path: packages/digital_brain_sdk_flutter
 
+  widgetbook: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
   bloc_test: ^10.0.0
-  # Design-time catalog of the Tier-1 RFW palette (docs/redesign 01: "Widgetbook
-  # catalogs the palette"). Manual directories — no build_runner codegen.
-  widgetbook: ^3.23.0
 
 
 flutter:

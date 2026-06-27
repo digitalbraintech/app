@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:digitalbrain_flutter/grpc/digitalbrain.pb.dart' as gw;
 import 'package:digitalbrain_flutter/grpc/digitalbrain.pbgrpc.dart' as gw;
 import '../visual_constructor_models.dart';
 import '../visual_constructor_state.dart';

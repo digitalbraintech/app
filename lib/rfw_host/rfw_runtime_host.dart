@@ -113,6 +113,14 @@ class UiSurfaceTreeRenderer {
       return const FDivider();
     }
 
+    // ForUI scaffold and autocomplete from NeuronUiKit (shell neuron trees, marketplace buddy search etc).
+    if (type == 'forui:fscaffold' || type == 'forui:scaffold' || type == 'scaffold') {
+      return _buildForuiScaffold(props, childrenList, onEvent, rfwHost, onNavSelected, activeTarget);
+    }
+    if (type == 'forui:fautocomplete' || type == 'forui:autocomplete' || type.contains('autocomplete')) {
+      return _buildForuiAutocomplete(props, onEvent);
+    }
+
     if (type == 'rfw') {
       final source = (node['RfwSource'] ?? props['source'])?.toString();
       final root = (node['RfwRoot'] ?? props['root'] ?? 'root').toString();
@@ -156,7 +164,7 @@ class UiSurfaceTreeRenderer {
     if (type.contains('sidebar')) {
       // Prefer children (Neuron UI Kit MenuItems or forui items) for full server-driven shell.
       if (childrenList.isNotEmpty) {
-        return _buildSidebarFromChildren(childrenList, onEvent, onNavSelected, activeTarget);
+        return _buildSidebarFromChildren(childrenList, onEvent, onNavSelected, activeTarget, props);
       }
       final items = (props['navItems'] ?? const []) as List;
       return _buildDynamicSidebar(items, onNavSelected, activeTarget);
@@ -193,25 +201,23 @@ class UiSurfaceTreeRenderer {
 
     if (type == 'list' || type == 'vlist' || type.contains('list')) {
       final raw = (props['items'] ?? childrenList) as List;
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: raw.map((rawItem) {
-          final m = rawItem is Map<String, Object?> ? rawItem : <String, Object?>{'label': rawItem.toString()};
-          final lbl = (m['label'] ?? m['text'] ?? m['title'] ?? '').toString();
-          final sub = (m['subtitle'] ?? m['description'] ?? m['summary'] ?? '').toString();
-          return FTappable(
-            onPress: () {
-              onEvent('select', m);
-              final t = (m['targetSurfaceKind'] ?? m['target'] ?? m['path'])?.toString();
-              if (t != null && t.isNotEmpty) onNavSelected?.call(t);
-            },
-            child: FCard(
-              title: Text(lbl),
-              subtitle: sub.isEmpty ? null : Text(sub),
-            ),
-          );
-        }).toList(),
-      );
+      final cards = raw.map((rawItem) {
+        final m = rawItem is Map<String, Object?> ? rawItem : <String, Object?>{'label': rawItem.toString()};
+        final lbl = (m['label'] ?? m['text'] ?? m['title'] ?? '').toString();
+        final sub = (m['subtitle'] ?? m['description'] ?? m['summary'] ?? '').toString();
+        return FTappable(
+          onPress: () {
+            onEvent('select', m);
+            final t = (m['targetSurfaceKind'] ?? m['target'] ?? m['path'])?.toString();
+            if (t != null && t.isNotEmpty) onNavSelected?.call(t);
+          },
+          child: FCard(
+            title: Text(lbl),
+            subtitle: sub.isEmpty ? null : Text(sub),
+          ),
+        );
+      }).toList();
+      return cards.isEmpty ? const SizedBox.shrink() : ListView(children: cards);
     }
 
     if (type == 'row' || type == 'hstack' || type == 'hbox') {
@@ -223,11 +229,18 @@ class UiSurfaceTreeRenderer {
     }
 
     if (type == 'column' || type == 'vstack' || type == 'vbox') {
+      final kids = childrenList.cast<Map<String, Object?>>().map((c) =>
+        build(c, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget)
+      ).toList();
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: childrenList.cast<Map<String, Object?>>().map((c) =>
-          build(c, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget)
-        ).toList(),
+        children: List.generate(kids.length, (i) {
+          final w = kids[i];
+          if (i == kids.length - 1) {
+            return Expanded(child: w);
+          }
+          return w;
+        }),
       );
     }
 
@@ -251,7 +264,7 @@ class UiSurfaceTreeRenderer {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
-              child: Text(title, style: FTheme.of(navigatorKey.currentContext!).typography.lg),
+              child: Text(title, style: _sidebarTitleStyle()),
             ),
             const FDivider(),
           ],
@@ -292,7 +305,7 @@ class UiSurfaceTreeRenderer {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
-              child: Text(title, style: FTheme.of(navigatorKey.currentContext!).typography.lg),
+              child: Text(title, style: _sidebarTitleStyle()),
             ),
             const FDivider(),
           ],
@@ -326,14 +339,14 @@ class UiSurfaceTreeRenderer {
     RemoteEventHandler onEvent,
     void Function(String)? onNav,
     String? active,
+    Map<String, Object?> sidebarProps,
   ) {
     final items = childrenList
         .cast<Map<String, Object?>>()
         .map((c) => _buildNeuronMenuItem((c['Props'] ?? c['props'] ?? c) as Map<String, Object?>, onEvent, onNav, active))
         .toList();
-    final title = (childrenList.isNotEmpty
-        ? ((childrenList.first as Map)['title']?.toString() ?? (childrenList.first as Map)['headerTitle']?.toString() ?? '')
-        : '');
+    final title = (sidebarProps['title']?.toString() ?? sidebarProps['headerTitle']?.toString()
+      ?? (childrenList.isNotEmpty ? ((childrenList.first as Map)['title']?.toString() ?? (childrenList.first as Map)['headerTitle']?.toString() ?? '') : ''));
     return FSidebar(
       header: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -342,7 +355,7 @@ class UiSurfaceTreeRenderer {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
-              child: Text(title, style: FTheme.of(navigatorKey.currentContext!).typography.lg),
+              child: Text(title, style: _sidebarTitleStyle()),
             ),
             const FDivider(),
           ],
@@ -351,7 +364,98 @@ class UiSurfaceTreeRenderer {
       children: items,
     );
   }
+
+  Widget _buildForuiScaffold(
+    Map<String, Object?> props,
+    List childrenList,
+    RemoteEventHandler onEvent,
+    RfwRuntimeHost rfwHost,
+    void Function(String targetKind)? onNavSelected,
+    String? activeTarget,
+  ) {
+    Widget header = const SizedBox.shrink();
+    Widget sidebar = const SizedBox.shrink();
+    Widget child = const SizedBox.shrink();
+    Widget? footer;
+
+    for (final c in childrenList) {
+      final cm = c as Map<String, Object?>;
+      final cType = (cm['Type'] ?? cm['type'] ?? '').toString().toLowerCase();
+      if (cType.contains('header')) {
+        header = build(cm, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget);
+      } else if (cType.contains('sidebar')) {
+        sidebar = build(cm, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget);
+      } else if (cType.contains('footer') || cType.contains('bottomnav')) {
+        footer = build(cm, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget);
+      } else {
+        child = build(cm, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget);
+      }
+    }
+
+    return FScaffold(
+      header: header is SizedBox ? FHeader(title: Text((props['title'] ?? '').toString())) : header,
+      sidebar: sidebar is SizedBox ? null : sidebar,
+      footer: footer,
+      child: child,
+    );
+  }
+
+  Widget _buildForuiAutocomplete(Map<String, Object?> props, RemoteEventHandler onEvent) {
+    final itemsRaw = props['items'] ?? props['suggestions'] ?? const <Object>[];
+    final suggestions = itemsRaw is List ? itemsRaw.map((e) => e.toString()).toList() : <String>[];
+    final hint = (props['hint'] ?? props['placeholder'] ?? 'Search buddies').toString();
+
+    // ForUI based buddy/pack search (using FTextField + FTappable results from kit tree).
+    // Typing not fully live (tree driven); selection fires synapse event.
+    return _ForuiBuddySearch(
+      hint: hint,
+      suggestions: suggestions,
+      onSelect: (value) => onEvent('select', {'value': value, ...props}),
+    );
+  }
 }
 
 // Simple navigator key for theme access in renderer when no context.
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+/// Local ForUI search widget for buddy/pack autocomplete in dynamic trees (marketplace etc).
+/// Uses FTextField + results as FTappable FCard. Query select sends event for neuron/synapse handling.
+class _ForuiBuddySearch extends StatefulWidget {
+  const _ForuiBuddySearch({required this.hint, required this.suggestions, required this.onSelect});
+
+  final String hint;
+  final List<String> suggestions;
+  final void Function(String value) onSelect;
+
+  @override
+  State<_ForuiBuddySearch> createState() => _ForuiBuddySearchState();
+}
+
+class _ForuiBuddySearchState extends State<_ForuiBuddySearch> {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FTextField(
+          label: Text(widget.hint),
+          hint: widget.hint,
+        ),
+        const SizedBox(height: 8),
+        ...widget.suggestions.take(5).map((s) => FTappable(
+          onPress: () => widget.onSelect(s),
+          child: FCard(title: Text(s)),
+        )),
+      ],
+    );
+  }
+
+}
+
+TextStyle _sidebarTitleStyle() {
+  final ctx = navigatorKey.currentContext;
+  if (ctx != null) {
+    return FTheme.of(ctx).typography.lg;
+  }
+  return const TextStyle(fontSize: 16, color: Color(0xFFE0E0E0));
+}

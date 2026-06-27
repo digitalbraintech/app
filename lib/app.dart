@@ -18,7 +18,6 @@ class DigitalBrainApp extends StatelessWidget {
       theme: theme,
       darkTheme: theme,
       routerConfig: digitalbrainRouter,
-      // navigatorKey allows UiSurfaceTreeRenderer to access theme when building full app-shell from neuron.
       builder: (context, child) {
         final foruiTheme = FThemes.neutral.dark.desktop;
         return FTheme(

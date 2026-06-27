@@ -16,7 +16,7 @@ void main() {
       home: host.render(
         'e2e-doc',
         data: const <String, Object?>{},
-        onEvent: (_, __) {},
+        onEvent: (_, _) {},
         semanticsId: 'pack-surface-e2e',
         semanticsLabel: 'pack-surface-e2e',
       ),

@@ -355,3 +355,4 @@ class GlassBorderPainter extends CustomPainter {
         gradient != oldDelegate.gradient;
   }
 }
+

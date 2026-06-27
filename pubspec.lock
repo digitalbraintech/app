@@ -145,6 +145,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.7"
+  dart_style:
+    dependency: transitive
+    description:
+      name: dart_style
+      sha256: "29f7ecc274a86d32920b1d9cfc7502fa87220da41ec60b55f329559d5732e2b2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.1.7"
   dbus:
     dependency: transitive
     description:
@@ -269,6 +277,11 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.0"
+  flutter_localizations:
+    dependency: transitive
+    description: flutter
+    source: sdk
+    version: "0.0.0"
   flutter_plugin_android_lifecycle:
     dependency: transitive
     description:
@@ -287,6 +300,22 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  forui:
+    dependency: "direct main"
+    description:
+      name: forui
+      sha256: "099deb57d345aaafd73b4ee3dc150bfe032e1d583a898461183586cbb0153778"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.21.3"
+  forui_assets:
+    dependency: transitive
+    description:
+      name: forui_assets
+      sha256: f83517074a11f6458986dbb5d0a0b364cebf6861a4e143acb2d51e6626ecf813
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.21.0"
   freezed_annotation:
     dependency: transitive
     description:
@@ -351,6 +380,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.2"
+  graphic:
+    dependency: "direct main"
+    description:
+      name: graphic
+      sha256: f0028af737f7fdd5fd50c043af85242d72638ae040a820470208bc885a229d04
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.7.0"
   grpc:
     dependency: "direct main"
     description:
@@ -415,6 +452,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.0"
+  intl:
+    dependency: transitive
+    description:
+      name: intl
+      sha256: "3df61194eb431efc39c4ceba583b95633a403f46c9fd341e550ce0bfa50e9aa5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.20.2"
   io:
     dependency: transitive
     description:
@@ -655,6 +700,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.0"
+  nitrogen_types:
+    dependency: transitive
+    description:
+      name: nitrogen_types
+      sha256: "5d4ec453aea14e34607bc6021ff1381192e8fcd8541bf103638baa4d013e668f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.4.0+1"
   node_preamble:
     dependency: transitive
     description:
@@ -711,6 +764,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.9.1"
+  path_drawing:
+    dependency: transitive
+    description:
+      name: path_drawing
+      sha256: bbb1934c0cbb03091af082a6389ca2080345291ef07a5fa6d6e078ba8682f977
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.1"
+  path_parsing:
+    dependency: transitive
+    description:
+      name: path_parsing
+      sha256: "883402936929eac138ee0a45da5b0f2c80f89913e6dc3bf77eb65b84b409c6ca"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
   path_provider:
     dependency: "direct main"
     description:
@@ -1108,6 +1177,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.1"
+  sugar:
+    dependency: transitive
+    description:
+      name: sugar
+      sha256: a0a97f1d3552a3ef4cbec7c6e62c7b52c151cd5c11e984e8311700a918f73dc5
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.0"
   super_clipboard:
     dependency: transitive
     description:
@@ -1365,7 +1442,7 @@ packages:
     source: hosted
     version: "3.25.1"
   widgetbook:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: widgetbook
       sha256: "4ff857b441b7fc43432a69ec6fe56494184c895e36cec502e400648024710b9c"

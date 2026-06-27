@@ -358,7 +358,7 @@ class _CommandPaletteOverlayState extends State<CommandPaletteOverlay>
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       itemCount: _results.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 6),
+      separatorBuilder: (_, _) => const SizedBox(height: 6),
       itemBuilder: (ctx, idx) {
         final r = _results[idx];
         final style = styleForDomain(r.domain);
@@ -484,7 +484,7 @@ class _CommandPaletteOverlayState extends State<CommandPaletteOverlay>
           Expanded(
             child: ListView.separated(
               itemCount: suggestedSearch.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (ctx, i) {
                 final item = suggestedSearch[i];
                 return ClipRRect(
