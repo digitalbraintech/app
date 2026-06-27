@@ -70,8 +70,28 @@ const String kTaskManagerCardSource =
     '  ],\n'
     ');\n';
 
-const String kNemoChatCardSource =
+const String kChartCardSource =
     'import digitalbrain;\n'
+    '\n'
+    'widget ChartCard = Panel(\n'
+    '  radius: 20.0,\n'
+    '  padding: 12.0,\n'
+    '  child: VStack(\n'
+    '    gap: 8.0,\n'
+    '    cross: "stretch",\n'
+    '    children: [\n'
+    '      HStack(between: true, children: [\n'
+    '        Text(text: data.title ?? "Chart", variant: "title"),\n'
+    '        Badge(text: "graphic", tone: "teal"),\n'
+    '      ]),\n'
+    '      GraphicChart(data: data.data, graphicSpec: data.graphicSpec),\n'
+    '      Text(text: data.summary ?? "", variant: "dim"),\n'
+    '    ],\n'
+    '  ),\n'
+    ');\n'
+    '\n'
+    'const String kNemoChatCardSource =\n'
+    '    \'import digitalbrain;\n'
     '\n'
     'widget NemoChatCard = VStack(\n'
     '  gap: 14.0,\n'
@@ -184,6 +204,8 @@ const String kNemoChatCardSource =
     '    ),\n'
     '  ],\n'
     ');\n';
+
+const String kNemoChatCardSource = 'import digitalbrain;\n\nwidget NemoChatCard = VStack(\n  gap: 14.0,\n  children: [\n    Panel(\n      radius: 24.0,\n      padding: 22.0,\n      child: VStack(\n        gap: 18.0,\n        cross: "start",\n        children: [\n          HStack(\n            between: true,\n            children: [\n              VStack(\n                gap: 5.0,\n                cross: "start",\n                children: [\n                  SectionLabel(text: "LOCAL COGNITIVE NEURON"),\n                  Text(text: "Nemo LLM Integration", variant: "heading"),\n                  Text(text: "Real-time responses back from the local nemotron-mini model.", variant: "dim"),\n                ],\n              ),\n              Badge(text: "NEMO-MINI", tone: "violet"),\n            ],\n          ),\n          Divider(),\n          VStack(\n            gap: 12.0,\n            cross: "start",\n            children: [\n              Text(text: "USER PROMPT:", variant: "label"),\n              Text(text: data.prompt, variant: "body"),\n            ],\n          ),\n        ],\n      ),\n    ),\n    Panel(\n      radius: 24.0,\n      padding: 22.0,\n      child: VStack(\n        gap: 14.0,\n        cross: "start",\n        children: [\n          Text(text: "RESPONSE:", variant: "label"),\n          Text(text: data.response, variant: "body"),\n        ],\n      ),\n    ),\n    Panel(\n      radius: 20.0,\n      padding: 18.0,\n      child: VStack(\n        gap: 12.0,\n        cross: "stretch",\n        children: [\n          HStack(\n            between: true,\n            children: [\n              SectionLabel(text: "GENAI COGNITIVE TELEMETRY"),\n              Text(text: "HARDWARE / VRAM / INFERENCE", variant: "mono"),\n            ],\n          ),\n          Divider(),\n          HStack(\n            between: true,\n            children: [\n              Text(text: "Provider", variant: "dim"),\n              Badge(text: data.telemetry.provider, tone: "indigo"),\n            ],\n          ),\n          HStack(\n            between: true,\n            children: [\n              Text(text: "Model", variant: "dim"),\n              Badge(text: data.telemetry.model, tone: "violet"),\n            ],\n          ),\n          HStack(\n            between: true,\n            children: [\n              Text(text: "Input Tokens", variant: "dim"),\n              Counter(value: data.telemetry.inputTokens, tone: "indigo", label: "tokens"),\n            ],\n          ),\n          HStack(\n            between: true,\n            children: [\n              Text(text: "Output Tokens", variant: "dim"),\n              Counter(value: data.telemetry.outputTokens, tone: "teal", label: "tokens"),\n            ],\n          ),\n          HStack(\n            between: true,\n            children: [\n              Text(text: "Inference Time", variant: "dim"),\n              Badge(text: data.telemetry.duration, tone: "gold"),\n            ],\n          ),\n          HStack(\n            between: true,\n            children: [\n              Text(text: "Generation Speed", variant: "dim"),\n              Badge(text: data.telemetry.speed, tone: "teal"),\n            ],\n          ),\n        ],\n      ),\n    ),\n  ],\n);\n';
 
 Map<String, dynamic> cleanRfwData(Map<String, dynamic> data) {
   final Map<String, dynamic> result = {};
