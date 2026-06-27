@@ -245,8 +245,17 @@ class UiSurfaceTreeRenderer {
     final title = (items.isNotEmpty ? (items.first['title']?.toString() ?? items.first['headerTitle']?.toString() ?? 'DigitalBrain') : 'DigitalBrain');
     return FSidebar(
       header: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text(title, style: FTheme.of(navigatorKey.currentContext!).typography.lg),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
+              child: Text(title, style: FTheme.of(navigatorKey.currentContext!).typography.lg),
+            ),
+            const FDivider(),
+          ],
+        ),
       ),
       children: items.map((item) {
         final label = item['label']?.toString() ?? 'Item';
@@ -277,8 +286,17 @@ class UiSurfaceTreeRenderer {
         : const <Widget>[];
     return FSidebar(
       header: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text(title, style: FTheme.of(navigatorKey.currentContext!).typography.lg),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
+              child: Text(title, style: FTheme.of(navigatorKey.currentContext!).typography.lg),
+            ),
+            const FDivider(),
+          ],
+        ),
       ),
       children: menuChildren.cast<Widget>(),
     );
@@ -318,8 +336,17 @@ class UiSurfaceTreeRenderer {
         : 'DigitalBrain');
     return FSidebar(
       header: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text(title, style: FTheme.of(navigatorKey.currentContext!).typography.lg),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
+              child: Text(title, style: FTheme.of(navigatorKey.currentContext!).typography.lg),
+            ),
+            const FDivider(),
+          ],
+        ),
       ),
       children: items,
     );

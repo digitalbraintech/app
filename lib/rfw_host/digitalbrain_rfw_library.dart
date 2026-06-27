@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:rfw/rfw.dart' hide Switch;
+import 'package:graphic/graphic.dart' as graphic;
 
 import 'package:digitalbrain_flutter/digital_brain_ui/digital_brain_ui.dart';
 import 'package:digitalbrain_flutter/features/live/graph/domain_palette.dart';
@@ -54,6 +55,7 @@ Map<String, LocalWidgetBuilder> get _widgets => <String, LocalWidgetBuilder>{
   'SectionLabel': _sectionLabel,
   'Calendar': _calendar,
   'LineChart': _lineChart,
+  'GraphicChart': _graphicChart,
   'Donut': _donut,
   'Progress': _progress,
   'Timeline': _timeline,
@@ -263,7 +265,7 @@ Widget _stack(BuildContext c, DataSource s, Axis axis) {
     crossAxisAlignment: cross,
     mainAxisAlignment: main,
     mainAxisSize: MainAxisSize.min,
-    children: children,
+    children: children.map((c) => Flexible(child: c, fit: FlexFit.loose)).toList(),
   );
   // A Row that stretches its children on the cross (vertical) axis needs a
   // bounded height. RFW content renders inside an unbounded scroll viewport,
@@ -799,6 +801,49 @@ class _LinePainter extends CustomPainter {
   @override
   bool shouldRepaint(_LinePainter old) =>
       old.color != color || old.values != values;
+}
+
+// ── graphic chart (grammar-of-graphics via entronad/graphic) ─
+// Note: For full complex data extraction from RFW DataSource in custom widget, use path helpers.
+// This version falls back gracefully and supports basic data passed via the digital brain bridge.
+Widget _graphicChart(BuildContext c, DataSource s) {
+  // Extract simple data list if present using length + value paths
+  final data = <Map<String, dynamic>>[];
+  final n = s.length(['data']);
+  for (var i = 0; i < n; i++) {
+    // Use available path accessors; fallback to empty if complex maps not directly supported
+    final m = <String, dynamic>{'x': _dp(s, ['data', i, 'x'], i.toDouble()), 'y': _dp(s, ['data', i, 'y'], (i+1).toDouble())};
+    data.add(m);
+  }
+  if (data.isEmpty) {
+    // Demo data for gallery/testing
+    data.addAll([
+      {'x': 0.0, 'y': 10.0},
+      {'x': 1.0, 'y': 20.0},
+      {'x': 2.0, 'y': 15.0},
+    ]);
+  }
+
+  final rawSpec = s.v<Object>(['graphicSpec']) ?? s.v<Object>(['spec']);
+  final specMap = rawSpec is Map ? rawSpec : <String, dynamic>{};
+
+  return SizedBox(
+    height: 180,
+    child: graphic.Chart(
+      data: data,
+      variables: {
+        'x': graphic.Variable(accessor: (m) => ((m as Map)['x'] as num).toDouble()),
+        'y': graphic.Variable(accessor: (m) => ((m as Map)['y'] as num).toDouble()),
+      },
+      marks: [
+        graphic.LineMark(
+          position: graphic.Varset('x') * graphic.Varset('y'),
+        ),
+      ],
+      axes: [graphic.Defaults.horizontalAxis, graphic.Defaults.verticalAxis],
+      tooltip: graphic.TooltipGuide(),
+    ),
+  );
 }
 
 // ── donut ──────────────────────────────────────────────────
