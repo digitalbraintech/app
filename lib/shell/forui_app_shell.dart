@@ -189,25 +189,13 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
               rootWidget: root,
             );
           } else {
-            // Always delegate to renderer; no client-synthesized nodes or titles.
-            body = renderer.build(
-              <String, Object?>{'type': 'content-area', 'props': <String, Object?>{}},
-              _handleSurfaceEvent,
-              rfwHost: _rfwHost,
-              onNavSelected: (t) => setState(() => _selectedTarget = t),
-              activeTarget: _selectedTarget,
-            );
+            // No client-synthesized nodes. Pure host container when no server content.
+            body = const SizedBox.shrink();
           }
         }
       } else {
-        // No text dump: use renderer for a minimal content-area surface while waiting for live neuron emission.
-        body = renderer.build(
-          <String, Object?>{'type': 'content-area', 'props': <String, Object?>{}},
-          _handleSurfaceEvent,
-          rfwHost: _rfwHost,
-          onNavSelected: (t) => setState(() => _selectedTarget = t),
-          activeTarget: _selectedTarget,
-        );
+        // No client synthesis. When no active surface data, empty body (server should provide via tree).
+        body = const SizedBox.shrink();
       }
 
       return FScaffold(
