@@ -217,14 +217,11 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
       );
     }
 
-    // Pure thin host: everything (including chrome) must come from neurons via kit trees or events. No hardcoded titles, messages, chrome or fallbacks.
-    // When no tree, delegate to renderer with minimal app-shell (server will provide full when connected).
-    return renderer.build(
-      <String, Object?>{'type': 'app-shell', 'props': <String, Object?>{}, 'Children': <dynamic>[]},
-      _handleSurfaceEvent,
-      rfwHost: _rfwHost,
-      onNavSelected: (t) => setState(() => _selectedTarget = t),
-      activeTarget: _selectedTarget,
+    // Pure thin host: no client-defined tree shapes, chrome, titles or messages at all. Neurons provide 100% via kit trees when connected.
+    return FScaffold(
+      sidebar: const SizedBox.shrink(),
+      header: FHeader(title: const SizedBox.shrink()),
+      child: const SizedBox.shrink(),
     );
   }
 

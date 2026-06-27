@@ -93,7 +93,7 @@ class UiSurfaceTreeRenderer {
       return _buildNeuronMenuItem(props, onEvent, onNavSelected, activeTarget);
     }
     if (type == kitActionBtn || type == kitNeuronBtn || type == 'neuron:button') {
-      final label = (props['label'] ?? props['text'] ?? 'Action').toString();
+      final label = (props['label'] ?? props['text'] ?? '').toString();
       return FButton(
         onPress: () {
           onEvent('press', {'label': label, ...props});
@@ -163,7 +163,7 @@ class UiSurfaceTreeRenderer {
     }
 
     if (type.contains('fcard') || type == 'card' || type == 'panel') {
-      final title = props['title']?.toString() ?? 'Neuron Surface';
+      final title = props['title']?.toString() ?? '';
       final sub = props['subtitle']?.toString() ?? props['summary']?.toString() ?? '';
       final childWidgets = childrenList.isNotEmpty
           ? Column(children: childrenList.cast<Map<String, Object?>>().map((c) => build(c, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget)).toList())
@@ -176,7 +176,7 @@ class UiSurfaceTreeRenderer {
     }
 
     if (type == 'fbutton' || type == 'button' || type == 'action') {
-      final label = (props['label'] ?? props['text'] ?? props['title'] ?? 'Action').toString();
+      final label = (props['label'] ?? props['text'] ?? props['title'] ?? '').toString();
       return FButton(
         onPress: () {
           onEvent('press', {'label': label, ...props});
@@ -197,7 +197,7 @@ class UiSurfaceTreeRenderer {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: raw.map((rawItem) {
           final m = rawItem is Map<String, Object?> ? rawItem : <String, Object?>{'label': rawItem.toString()};
-          final lbl = (m['label'] ?? m['text'] ?? m['title'] ?? 'Item').toString();
+          final lbl = (m['label'] ?? m['text'] ?? m['title'] ?? '').toString();
           final sub = (m['subtitle'] ?? m['description'] ?? m['summary'] ?? '').toString();
           return FTappable(
             onPress: () {
@@ -258,7 +258,7 @@ class UiSurfaceTreeRenderer {
         ),
       ),
       children: items.map((item) {
-        final label = item['label']?.toString() ?? 'Item';
+        final label = item['label']?.toString() ?? '';
         final target = item['targetSurfaceKind']?.toString() ?? item['path']?.toString() ?? label;
         return FSidebarItem(
           label: Text(label),
@@ -308,7 +308,7 @@ class UiSurfaceTreeRenderer {
     void Function(String)? onNav,
     String? active,
   ) {
-    final label = (props['label'] ?? props['text'] ?? 'Item').toString();
+    final label = (props['label'] ?? props['text'] ?? '').toString();
     final target = (props['targetSurfaceKind'] ?? props['target'] ?? props['path'] ?? label).toString();
     final isSel = active == target;
     return FSidebarItem(
