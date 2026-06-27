@@ -832,16 +832,19 @@ class _NeuronFormState extends State<_NeuronForm> {
     final required = field['required'] == true;
     final controller = _controllers[name] ??= TextEditingController();
 
-    return TextField(
-      controller: controller,
-      obscureText: kind == 'password',
-      textInputAction: last ? TextInputAction.done : TextInputAction.next,
-      onSubmitted: (_) {
-        if (last) _submit();
-      },
-      decoration: InputDecoration(
-        labelText: required ? '$label *' : label,
-        border: const OutlineInputBorder(),
+    return Material(
+      type: MaterialType.transparency,
+      child: TextField(
+        controller: controller,
+        obscureText: kind == 'password',
+        textInputAction: last ? TextInputAction.done : TextInputAction.next,
+        onSubmitted: (_) {
+          if (last) _submit();
+        },
+        decoration: InputDecoration(
+          labelText: required ? '$label *' : label,
+          border: const OutlineInputBorder(),
+        ),
       ),
     );
   }

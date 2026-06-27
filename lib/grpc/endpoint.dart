@@ -15,7 +15,14 @@ import 'package:digitalbrain_flutter/telemetry/platform_env.dart';
   }
 
   const configured = String.fromEnvironment('KERNEL_ENDPOINT');
-  final aspireUrl = kIsWeb ? null : getEnv('services__kernel__https__0') ?? getEnv('services__kernel__http__0') ?? getEnv('services__kernel__web__0') ?? getEnv('services__kernel__grpc__0');
+  final aspireUrl = kIsWeb
+      ? null
+      : resolveAspireKernelUrl(
+          grpcUrl: getEnv('services__kernel__grpc__0'),
+          httpsUrl: getEnv('services__kernel__https__0'),
+          httpUrl: getEnv('services__kernel__http__0'),
+          webUrl: getEnv('services__kernel__web__0'),
+        );
 
   return resolveEndpointFrom(
     isWeb: kIsWeb,
@@ -23,6 +30,23 @@ import 'package:digitalbrain_flutter/telemetry/platform_env.dart';
     kernelEndpoint: configured.isEmpty ? null : configured,
     aspireKernelUrl: aspireUrl,
   );
+}
+
+String? resolveAspireKernelUrl({
+  String? grpcUrl,
+  String? httpsUrl,
+  String? httpUrl,
+  String? webUrl,
+}) {
+  String? nonEmpty(String? value) {
+    if (value == null || value.isEmpty) return null;
+    return value;
+  }
+
+  return nonEmpty(grpcUrl) ??
+      nonEmpty(httpsUrl) ??
+      nonEmpty(httpUrl) ??
+      nonEmpty(webUrl);
 }
 
 (String host, int port, bool secure) resolveEndpointFrom({

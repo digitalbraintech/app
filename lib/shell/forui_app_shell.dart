@@ -30,11 +30,13 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
   StreamController<ui.UiInputSynapse>? _uiInput;
   StreamSubscription<ui.UiStateSignal>? _uiSessionSub;
   StreamSubscription<gw.RfwCardEnvelope>? _homeFeedSub;
+  StreamSubscription<dynamic>? _channelStateSub;
 
   // Live data from neurons (minimal state for composition; all chrome/content from neuron trees)
   Map<String, Object?>? _shellTree;
   final Map<String, gw.RfwCardEnvelope> _surfacesByKind = {};
   String? _selectedTarget; // from tree only; no hardcoded default
+  String? _feedStatus;
 
   @override
   void initState() {
@@ -46,6 +48,7 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
   void dispose() {
     _homeFeedSub?.cancel();
     _uiSessionSub?.cancel();
+    _channelStateSub?.cancel();
     _uiInput?.close();
     _channel?.shutdown();
     super.dispose();
@@ -54,10 +57,18 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
   void _connect() {
     try {
       final (host, port, secure) = resolveKernelEndpoint();
+      final endpoint = '${secure ? 'https' : 'http'}://$host:$port';
+      debugPrint('DigitalBrain shell connecting WatchHomeFeed to $endpoint');
       final channel = createKernelChannel(
         host: host,
         port: port,
         secure: secure,
+      );
+      _channelStateSub?.cancel();
+      _channelStateSub = channel.onConnectionStateChanged.listen(
+        (state) => debugPrint('DigitalBrain gRPC channel state: $state'),
+        onError: (Object error) =>
+            debugPrint('DigitalBrain gRPC channel state error: $error'),
       );
       final client = DigitalBrainGatewayClient(
         channel,
@@ -67,20 +78,42 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
       _homeFeedSub?.cancel();
       final sub = client
           .watchHomeFeed(gw.WatchHomeFeedRequest())
-          .listen(_onCard, onError: (_) {}, onDone: () {});
+          .listen(_onCard, onError: _onFeedError, onDone: _onFeedDone);
 
       setState(() {
         _channel = channel;
         _homeFeedSub = sub;
+        _feedStatus = 'Waiting for neuron UI feed from $endpoint';
         _uiClient = UiGatewayClient(
           channel,
           interceptors: kernelInterceptors(),
         );
       });
       _openUiSession();
-    } catch (_) {
-      // fall back to static if no kernel (dev)
+    } catch (error, stackTrace) {
+      debugPrint('DigitalBrain shell failed to open WatchHomeFeed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      setState(() {
+        _feedStatus = 'Kernel UI feed connection failed: $error';
+      });
     }
+  }
+
+  void _onFeedError(Object error, StackTrace stackTrace) {
+    debugPrint('DigitalBrain WatchHomeFeed error: $error');
+    debugPrintStack(stackTrace: stackTrace);
+    if (!mounted) return;
+    setState(() {
+      _feedStatus = 'Kernel UI feed stream failed: $error';
+    });
+  }
+
+  void _onFeedDone() {
+    debugPrint('DigitalBrain WatchHomeFeed stream closed.');
+    if (!mounted) return;
+    setState(() {
+      _feedStatus = 'Kernel UI feed stream closed before any surface arrived.';
+    });
   }
 
   void _openUiSession() {
@@ -97,6 +130,7 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
     if (!mounted) return;
     final data = _decode(envelope.dataJson);
     final kind = (data['kind'] ?? data['surfaceKind'] ?? '').toString();
+    debugPrint('DigitalBrain received UI surface kind="$kind"');
 
     // Runtime-only ForUI notification from neuron/synapse (no static Flutter view).
     // Neuron emits UiSurface(kind: "toast" | "notification") with title/description.
@@ -134,6 +168,7 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
               (treeNode['Type']?.toString().toLowerCase() == 'app-shell'));
       if (hasShellMarker || treeLooksLikeShell) {
         _shellTree = data;
+        _feedStatus = null;
         final ac =
             data['activeContent'] ??
             (treeNode)?['activeContent'] ??
@@ -143,6 +178,7 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
         }
       } else if (kind.isNotEmpty) {
         _surfacesByKind[kind] = envelope;
+        _feedStatus = null;
       }
     });
   }
@@ -343,8 +379,12 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
           renderer,
           'marketplace-fallback',
         ) ??
-        const Center(
-          child: Text('Waiting for full neuron tree (UI kit from synapses)'),
+        Center(
+          child: Text(
+            _feedStatus ??
+                'Waiting for full neuron tree (UI kit from synapses)',
+            textAlign: TextAlign.center,
+          ),
         );
 
     // Marketplace migration to backend UI also applies in pure fallback.

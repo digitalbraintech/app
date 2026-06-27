@@ -36,5 +36,14 @@ void main() {
       expect(port, 59066);
       expect(secure, isTrue);
     });
+
+    test('desktop Aspire endpoint selection prefers grpc over web', () {
+      final url = resolveAspireKernelUrl(
+        grpcUrl: 'http://localhost:60419',
+        webUrl: 'http://localhost:60420',
+      );
+
+      expect(url, 'http://localhost:60419');
+    });
   });
 }
