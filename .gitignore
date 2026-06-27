@@ -33,6 +33,10 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Windows build artifacts (MSVC/obj directories from Flutter Windows target)
+obj/
+**/obj/
+
 # Symbolication related
 app.*.symbols
 
