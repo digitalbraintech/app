@@ -39,11 +39,6 @@ class _LivingCanvasScreenState extends State<LivingCanvasScreen> {
   final VisualConstructorState _constructorState = VisualConstructorState();
   final RfwRuntimeHost _rfwHost = RfwRuntimeHost();
 
-  final TextEditingController _csvController = TextEditingController(text: 'month,sales\nJan,42\nFeb,58\nMar,31\nApr,71');
-  final TextEditingController _chartPromptController = TextEditingController();
-  final List<String> _chartChatLog = <String>[];
-  String _activeChartSurfaceId = 'surface.chart.demo';
-
   // Window manager: each WatchHomeFeed card becomes a floating panel (W-1).
   late final PanelManager _panels = PanelManager(
     brainId: _brainId,
@@ -332,63 +327,7 @@ widget root = Panel(
   }
 
   // Simple CSV to rows JSON for chart data source (client side, then fire to neuron)
-  List<Map<String, Object?>> _parseCsvToRows(String csv) {
-    final lines = csv.trim().split('\n');
-    if (lines.length < 2) return [];
-    final headers = lines.first.split(',').map((h) => h.trim()).toList();
-    final rows = <Map<String, Object?>>[];
-    for (var i = 1; i < lines.length; i++) {
-      final vals = lines[i].split(',').map((v) => v.trim()).toList();
-      final row = <String, Object?>{};
-      for (var j = 0; j < headers.length && j < vals.length; j++) {
-        final num = double.tryParse(vals[j]);
-        row[headers[j]] = num ?? vals[j];
-      }
-      rows.add(row);
-    }
-    return rows;
-  }
 
-  void _loadCsvAsChart() {
-    final client = _client;
-    if (client == null) return;
-    final csv = _csvController.text;
-    final rows = _parseCsvToRows(csv);
-    if (rows.isEmpty) return;
-    final dataJson = jsonEncode(rows);
-    final env = gw.SynapseEnvelope()
-      ..correlationId = _activeChartSurfaceId
-      ..typeName = 'VisualizeDataRequest'
-      ..payload = Uint8List.fromList(utf8.encode(jsonEncode({
-        'Prompt': 'chart from csv data source',
-        'DataJson': dataJson,
-        'RequestId': _activeChartSurfaceId,
-      })));
-    client.send(env);
-    _chartChatLog.add('> loaded csv (${rows.length} rows) -> visualize');
-    setState(() {});
-  }
-
-  void _sendChartPrompt(String text) {
-    if (text.trim().isEmpty) return;
-    final client = _client;
-    if (client == null) {
-      _chartChatLog.add('> $text (no client, demo only)');
-      setState(() {});
-      return;
-    }
-    final env = gw.SynapseEnvelope()
-      ..correlationId = _activeChartSurfaceId
-      ..typeName = 'ChartCommand'
-      ..payload = Uint8List.fromList(utf8.encode(jsonEncode({
-        'SurfaceId': _activeChartSurfaceId,
-        'Instruction': text.trim(),
-      })));
-    client.send(env);
-    _chartChatLog.add('> $text');
-    _chartPromptController.clear();
-    setState(() {});
-  }
 
   @override
   void dispose() {
@@ -398,8 +337,6 @@ widget root = Panel(
     _panels.saveLayout();
     _panels.dispose();
     _inoCodeController.dispose();
-    _csvController.dispose();
-    _chartPromptController.dispose();
     super.dispose();
   }
 
@@ -723,83 +660,4 @@ widget root = Panel(
     );
   }
 
-  // UI Kit Gallery tab (ForUI + current kit samples + note on charts)
-  Widget _buildUiKitGallery() {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('UI Kit Gallery (ForUI + RFW)', style: TextStyle(color: Colors.white70, fontSize: 14)),
-          const SizedBox(height: 12),
-          forui.FCard(
-            title: const Text('ForUI Primitives'),
-            child: Column(children: [
-              forui.FButton(onPress: () {}, child: const Text('ForUI Button')),
-              const SizedBox(height: 8),
-              forui.FCard(child: const Text('ForUI Card in gallery')),
-            ]),
-          ),
-          const SizedBox(height: 12),
-          forui.FCard(
-            title: const Text('Charts (graphic)'),
-            child: const Text('Live graphic charts via server surfaces. Use Chart Lab tab or CSV load to play. Selections & prompts update live.'),
-          ),
-          const SizedBox(height: 8),
-          const Text('(Full port to ForUI shell + tabs planned; see brainstorm)'),
-        ],
-      ),
-    );
-  }
-
-  // Chart Lab: simple CSV data source + chat window to send prompts to ChartNeuron for live interaction
-  Widget _buildChartLab() {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('CSV Data Source + Chat to Charts', style: TextStyle(color: Colors.white70)),
-          const SizedBox(height: 8),
-          const Text('Paste CSV (header + rows), Load -> creates/updates chart panel via Visualize. Then chat prompts like "filter last 2", "switch to area".'),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _csvController,
-            maxLines: 4,
-            style: const TextStyle(fontFamily: 'monospace', fontSize: 11, color: Colors.white),
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              labelText: 'CSV',
-              labelStyle: TextStyle(color: Colors.white54),
-            ),
-          ),
-          const SizedBox(height: 8),
-          forui.FButton(onPress: _loadCsvAsChart, child: const Text('Load CSV as Chart')),
-          const SizedBox(height: 16),
-          const Divider(color: Colors.white24),
-          const Text('Chat with active chart (sends ChartCommand)', style: TextStyle(color: Colors.white70, fontSize: 12)),
-          Container(
-            height: 120,
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(border: Border.all(color: Colors.white24)),
-            child: ListView.builder(
-              itemCount: _chartChatLog.length,
-              itemBuilder: (_, i) => Text(_chartChatLog[i], style: const TextStyle(fontSize: 11, color: Colors.white70)),
-            ),
-          ),
-          Row(children: [
-            Expanded(
-              child: TextField(
-                controller: _chartPromptController,
-                onSubmitted: _sendChartPrompt,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(hintText: 'e.g. switch to area, filter last 3, highlight outliers', hintStyle: TextStyle(color: Colors.white38)),
-              ),
-            ),
-            forui.FButton(onPress: () => _sendChartPrompt(_chartPromptController.text), child: const Text('Send')),
-          ]),
-          const SizedBox(height: 4),
-          Text('Active surface: $_activeChartSurfaceId (updates panels live)', style: const TextStyle(fontSize: 10, color: Colors.white54)),
-        ],
-      ),
-    );
-  }
 }
