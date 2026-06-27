@@ -105,7 +105,7 @@ class UiSurfaceTreeRenderer {
     }
 
     if (type == 'neuron:header' || type == 'header') {
-      final t = (props['title'] ?? props['text'] ?? props['label'] ?? 'DigitalBrain').toString();
+      final t = (props['title'] ?? props['text'] ?? props['label'] ?? '').toString();
       return FHeader(title: Text(t));
     }
 
@@ -127,8 +127,8 @@ class UiSurfaceTreeRenderer {
 
     if (type == 'app-shell' || type == 'appshell') {
       Widget sidebarWidget = const SizedBox.shrink();
-      Widget headerWidget = FHeader(title: Text((props['title'] ?? 'DigitalBrain').toString()));
-      Widget body = const Center(child: Text('No content surface'));
+      Widget headerWidget = FHeader(title: Text((props['title'] ?? '').toString()));
+      Widget body = Center(child: const SizedBox.shrink());
 
       for (final child in childrenList) {
         final c = child as Map<String, Object?>;
@@ -242,7 +242,7 @@ class UiSurfaceTreeRenderer {
 
   Widget _buildDynamicSidebar(List rawItems, void Function(String)? onNav, String? active) {
     final items = rawItems.cast<Map>();
-    final title = (items.isNotEmpty ? (items.first['title']?.toString() ?? items.first['headerTitle']?.toString() ?? 'DigitalBrain') : 'DigitalBrain');
+    final title = (items.isNotEmpty ? (items.first['title']?.toString() ?? items.first['headerTitle']?.toString() ?? '') : '');
     return FSidebar(
       header: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -277,7 +277,7 @@ class UiSurfaceTreeRenderer {
     void Function(String targetKind)? onNavSelected,
     String? activeTarget,
   ) {
-    final title = (props['title'] ?? props['headerTitle'] ?? 'DigitalBrain').toString();
+    final title = (props['title'] ?? props['headerTitle'] ?? '').toString();
     final menuChildren = childrenList.isNotEmpty
         ? childrenList
             .cast<Map<String, Object?>>()
@@ -332,8 +332,8 @@ class UiSurfaceTreeRenderer {
         .map((c) => _buildNeuronMenuItem((c['Props'] ?? c['props'] ?? c) as Map<String, Object?>, onEvent, onNav, active))
         .toList();
     final title = (childrenList.isNotEmpty
-        ? ((childrenList.first as Map)['title']?.toString() ?? (childrenList.first as Map)['headerTitle']?.toString() ?? 'DigitalBrain')
-        : 'DigitalBrain');
+        ? ((childrenList.first as Map)['title']?.toString() ?? (childrenList.first as Map)['headerTitle']?.toString() ?? '')
+        : '');
     return FSidebar(
       header: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
