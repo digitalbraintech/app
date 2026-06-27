@@ -325,7 +325,7 @@ widget root = Panel(
     client.send(envelope);
   }
 
-  // Simple CSV to rows JSON for chart data source (client side, then fire to neuron)
+
 
 
   @override
