@@ -10,7 +10,10 @@ import 'package:digitalbrain_flutter/rfw_host/digitalbrain_rfw_library.dart';
 /// bad document degrades to an error string instead of taking down the host.
 class RfwRuntimeHost {
   RfwRuntimeHost() {
-    _runtime.update(const LibraryName(['digitalbrain']), createDigitalBrainWidgets());
+    _runtime.update(
+      const LibraryName(['digitalbrain']),
+      createDigitalBrainWidgets(),
+    );
   }
 
   final Runtime _runtime = Runtime();
@@ -77,9 +80,14 @@ class UiSurfaceTreeRenderer {
     void Function(String targetKind)? onNavSelected,
     String? activeTarget,
   }) {
-    final type = (node['Type'] ?? node['type'] ?? 'Container').toString().toLowerCase();
-    final props = (node['Props'] ?? node['props'] ?? const <String, Object?>{}) as Map<String, Object?>;
-    final childrenList = (node['Children'] ?? node['children'] ?? const []) as List;
+    final type = (node['Type'] ?? node['type'] ?? 'Container')
+        .toString()
+        .toLowerCase();
+    final props =
+        (node['Props'] ?? node['props'] ?? const <String, Object?>{})
+            as Map<String, Object?>;
+    final childrenList =
+        (node['Children'] ?? node['children'] ?? const []) as List;
 
     // Neuron UI Kit (server-driven only; client is thin renderer). Match exact kit types (from NeuronUiKit in Core).
     const kitMenu = 'neuron:menu';
@@ -87,12 +95,21 @@ class UiSurfaceTreeRenderer {
     const kitActionBtn = 'neuron:actionbutton';
     const kitNeuronBtn = 'neuron:neuronbutton';
     if (type == kitMenu || type == 'neuron:sidebar') {
-      return _buildNeuronMenu(props, childrenList, onEvent, rfwHost, onNavSelected, activeTarget);
+      return _buildNeuronMenu(
+        props,
+        childrenList,
+        onEvent,
+        rfwHost,
+        onNavSelected,
+        activeTarget,
+      );
     }
     if (type == kitMenuItem || type == 'neuron:menu-item') {
       return _buildNeuronMenuItem(props, onEvent, onNavSelected, activeTarget);
     }
-    if (type == kitActionBtn || type == kitNeuronBtn || type == 'neuron:button') {
+    if (type == kitActionBtn ||
+        type == kitNeuronBtn ||
+        type == 'neuron:button') {
       final label = (props['label'] ?? props['text'] ?? '').toString();
       return FButton(
         onPress: () {
@@ -105,7 +122,8 @@ class UiSurfaceTreeRenderer {
     }
 
     if (type == 'neuron:header' || type == 'header') {
-      final t = (props['title'] ?? props['text'] ?? props['label'] ?? '').toString();
+      final t = (props['title'] ?? props['text'] ?? props['label'] ?? '')
+          .toString();
       return FHeader(title: Text(t));
     }
 
@@ -114,38 +132,59 @@ class UiSurfaceTreeRenderer {
     }
 
     // ForUI scaffold and autocomplete from NeuronUiKit (shell neuron trees, marketplace buddy search etc).
-    if (type == 'forui:fscaffold' || type == 'forui:scaffold' || type == 'scaffold') {
-      return _buildForuiScaffold(props, childrenList, onEvent, rfwHost, onNavSelected, activeTarget);
+    if (type == 'forui:fscaffold' ||
+        type == 'forui:scaffold' ||
+        type == 'scaffold') {
+      return _buildForuiScaffold(
+        props,
+        childrenList,
+        onEvent,
+        rfwHost,
+        onNavSelected,
+        activeTarget,
+      );
     }
-    if (type == 'forui:fautocomplete' || type == 'forui:autocomplete' || type.contains('autocomplete')) {
+    if (type == 'forui:fautocomplete' ||
+        type == 'forui:autocomplete' ||
+        type.contains('autocomplete')) {
       return _buildForuiAutocomplete(props, onEvent);
     }
 
-    if (type == 'forui:ftextfield' || type == 'forui:textfield' || type.contains('textfield')) {
+    if (type == 'forui:ftextfield' ||
+        type == 'forui:textfield' ||
+        type.contains('textfield')) {
       final label = (props['label'] ?? props['hint'] ?? '').toString();
       final hint = (props['hint'] ?? props['placeholder'] ?? label).toString();
-      return FTextField(
-        label: Text(label),
-        hint: hint,
-      );
+      return FTextField(label: Text(label), hint: hint);
     }
 
-    if (type == 'forui:fselect' || type == 'forui:select' || type.contains('select')) {
+    if (type == 'neuron:form' || type == 'form' || type == 'forui:fform') {
+      return _NeuronForm(props: props, onEvent: onEvent);
+    }
+
+    if (type == 'forui:fselect' ||
+        type == 'forui:select' ||
+        type.contains('select')) {
       final itemsRaw = props['items'] ?? const <Object>[];
-      final items = itemsRaw is List ? itemsRaw.map((e) => e.toString()).toList() : <String>[];
+      final items = itemsRaw is List
+          ? itemsRaw.map((e) => e.toString()).toList()
+          : <String>[];
       final label = (props['label'] ?? 'Select').toString();
-      return FSelect(
-        label: Text(label),
-        items: {for (final i in items) i: i},
-      );
+      return FSelect(label: Text(label), items: {for (final i in items) i: i});
     }
 
     if (type == 'forui:fbutton' || type == 'forui:button' || type == 'button') {
       final label = (props['label'] ?? props['text'] ?? '').toString();
-      final variantStr = (props['variant'] ?? 'primary').toString().toLowerCase();
+      final variantStr = (props['variant'] ?? 'primary')
+          .toString()
+          .toLowerCase();
       var variant = FButtonVariant.primary;
-      if (variantStr.contains('outline')) variant = FButtonVariant.outline;
-      if (variantStr.contains('destructive')) variant = FButtonVariant.destructive;
+      if (variantStr.contains('outline')) {
+        variant = FButtonVariant.outline;
+      }
+      if (variantStr.contains('destructive')) {
+        variant = FButtonVariant.destructive;
+      }
       return FButton(
         variant: variant,
         onPress: () {
@@ -160,34 +199,64 @@ class UiSurfaceTreeRenderer {
     if (type == 'rfw') {
       final source = (node['RfwSource'] ?? props['source'])?.toString();
       final root = (node['RfwRoot'] ?? props['root'] ?? 'root').toString();
-      final data = (props['data'] ?? const <String, Object?>{}) as Map<String, Object?>;
+      final data =
+          (props['data'] ?? const <String, Object?>{}) as Map<String, Object?>;
       if (source != null && source.isNotEmpty) {
         final key = 'dyn-${source.hashCode}';
         rfwHost.ensureLoaded(key, source);
-        return rfwHost.render(key, data: data, onEvent: onEvent, rootWidget: root);
+        return rfwHost.render(
+          key,
+          data: data,
+          onEvent: onEvent,
+          rootWidget: root,
+        );
       }
       return const SizedBox.shrink();
     }
 
     if (type == 'app-shell' || type == 'appshell') {
       Widget sidebarWidget = const SizedBox.shrink();
-      Widget headerWidget = FHeader(title: Text((props['title'] ?? '').toString()));
+      Widget headerWidget = FHeader(
+        title: Text((props['title'] ?? '').toString()),
+      );
       Widget body = Center(child: const SizedBox.shrink());
 
       for (final child in childrenList) {
         final c = child as Map<String, Object?>;
         final cType = (c['Type'] ?? c['type'] ?? '').toString().toLowerCase();
         if (cType.contains('sidebar') || cType.contains('menu')) {
-          sidebarWidget = build(c, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget);
+          sidebarWidget = build(
+            c,
+            onEvent,
+            rfwHost: rfwHost,
+            onNavSelected: onNavSelected,
+            activeTarget: activeTarget,
+          );
         } else if (cType.contains('header')) {
-          headerWidget = build(c, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget);
+          headerWidget = build(
+            c,
+            onEvent,
+            rfwHost: rfwHost,
+            onNavSelected: onNavSelected,
+            activeTarget: activeTarget,
+          );
         } else {
-          body = build(c, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget);
+          body = build(
+            c,
+            onEvent,
+            rfwHost: rfwHost,
+            onNavSelected: onNavSelected,
+            activeTarget: activeTarget,
+          );
         }
       }
 
       if (sidebarWidget is SizedBox && props.containsKey('navItems')) {
-        sidebarWidget = _buildDynamicSidebar(props['navItems'] as List? ?? const [], onNavSelected, activeTarget);
+        sidebarWidget = _buildDynamicSidebar(
+          props['navItems'] as List? ?? const [],
+          onNavSelected,
+          activeTarget,
+        );
       }
 
       return FScaffold(
@@ -200,7 +269,13 @@ class UiSurfaceTreeRenderer {
     if (type.contains('sidebar')) {
       // Prefer children (Neuron UI Kit MenuItems or forui items) for full server-driven shell.
       if (childrenList.isNotEmpty) {
-        return _buildSidebarFromChildren(childrenList, onEvent, onNavSelected, activeTarget, props);
+        return _buildSidebarFromChildren(
+          childrenList,
+          onEvent,
+          onNavSelected,
+          activeTarget,
+          props,
+        );
       }
       final items = (props['navItems'] ?? const []) as List;
       return _buildDynamicSidebar(items, onNavSelected, activeTarget);
@@ -208,9 +283,23 @@ class UiSurfaceTreeRenderer {
 
     if (type.contains('fcard') || type == 'card' || type == 'panel') {
       final title = props['title']?.toString() ?? '';
-      final sub = props['subtitle']?.toString() ?? props['summary']?.toString() ?? '';
+      final sub =
+          props['subtitle']?.toString() ?? props['summary']?.toString() ?? '';
       final childWidgets = childrenList.isNotEmpty
-          ? Column(children: childrenList.cast<Map<String, Object?>>().map((c) => build(c, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget)).toList())
+          ? Column(
+              children: childrenList
+                  .cast<Map<String, Object?>>()
+                  .map(
+                    (c) => build(
+                      c,
+                      onEvent,
+                      rfwHost: rfwHost,
+                      onNavSelected: onNavSelected,
+                      activeTarget: activeTarget,
+                    ),
+                  )
+                  .toList(),
+            )
           : null;
       return FCard(
         title: Text(title),
@@ -220,11 +309,14 @@ class UiSurfaceTreeRenderer {
     }
 
     if (type == 'fbutton' || type == 'button' || type == 'action') {
-      final label = (props['label'] ?? props['text'] ?? props['title'] ?? '').toString();
+      final label = (props['label'] ?? props['text'] ?? props['title'] ?? '')
+          .toString();
       return FButton(
         onPress: () {
           onEvent('press', {'label': label, ...props});
-          final t = (props['targetSurfaceKind'] ?? props['target'] ?? props['path'])?.toString();
+          final t =
+              (props['targetSurfaceKind'] ?? props['target'] ?? props['path'])
+                  ?.toString();
           if (t != null && t.isNotEmpty) onNavSelected?.call(t);
         },
         child: Text(label),
@@ -232,19 +324,25 @@ class UiSurfaceTreeRenderer {
     }
 
     if (type == 'text' || type == 'label') {
-      return Text((props['text'] ?? props['value'] ?? props['label'] ?? '').toString());
+      return Text(
+        (props['text'] ?? props['value'] ?? props['label'] ?? '').toString(),
+      );
     }
 
     if (type == 'list' || type == 'vlist' || type.contains('list')) {
       final raw = (props['items'] ?? childrenList) as List;
       final cards = raw.map((rawItem) {
-        final m = rawItem is Map<String, Object?> ? rawItem : <String, Object?>{'label': rawItem.toString()};
+        final m = rawItem is Map<String, Object?>
+            ? rawItem
+            : <String, Object?>{'label': rawItem.toString()};
         final lbl = (m['label'] ?? m['text'] ?? m['title'] ?? '').toString();
-        final sub = (m['subtitle'] ?? m['description'] ?? m['summary'] ?? '').toString();
+        final sub = (m['subtitle'] ?? m['description'] ?? m['summary'] ?? '')
+            .toString();
         return FTappable(
           onPress: () {
             onEvent('select', m);
-            final t = (m['targetSurfaceKind'] ?? m['target'] ?? m['path'])?.toString();
+            final t = (m['targetSurfaceKind'] ?? m['target'] ?? m['path'])
+                ?.toString();
             if (t != null && t.isNotEmpty) onNavSelected?.call(t);
           },
           child: FCard(
@@ -253,21 +351,41 @@ class UiSurfaceTreeRenderer {
           ),
         );
       }).toList();
-      return cards.isEmpty ? const SizedBox.shrink() : ListView(children: cards);
+      return cards.isEmpty
+          ? const SizedBox.shrink()
+          : ListView(children: cards);
     }
 
     if (type == 'row' || type == 'hstack' || type == 'hbox') {
       return Row(
-        children: childrenList.cast<Map<String, Object?>>().map((c) =>
-          build(c, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget)
-        ).toList(),
+        children: childrenList
+            .cast<Map<String, Object?>>()
+            .map(
+              (c) => build(
+                c,
+                onEvent,
+                rfwHost: rfwHost,
+                onNavSelected: onNavSelected,
+                activeTarget: activeTarget,
+              ),
+            )
+            .toList(),
       );
     }
 
     if (type == 'column' || type == 'vstack' || type == 'vbox') {
-      final kids = childrenList.cast<Map<String, Object?>>().map((c) =>
-        build(c, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget)
-      ).toList();
+      final kids = childrenList
+          .cast<Map<String, Object?>>()
+          .map(
+            (c) => build(
+              c,
+              onEvent,
+              rfwHost: rfwHost,
+              onNavSelected: onNavSelected,
+              activeTarget: activeTarget,
+            ),
+          )
+          .toList();
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: List.generate(kids.length, (i) {
@@ -283,15 +401,32 @@ class UiSurfaceTreeRenderer {
     // Recursive default (layout container)
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: childrenList.cast<Map<String, Object?>>().map((c) =>
-        build(c, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget)
-      ).toList(),
+      children: childrenList
+          .cast<Map<String, Object?>>()
+          .map(
+            (c) => build(
+              c,
+              onEvent,
+              rfwHost: rfwHost,
+              onNavSelected: onNavSelected,
+              activeTarget: activeTarget,
+            ),
+          )
+          .toList(),
     );
   }
 
-  Widget _buildDynamicSidebar(List rawItems, void Function(String)? onNav, String? active) {
+  Widget _buildDynamicSidebar(
+    List rawItems,
+    void Function(String)? onNav,
+    String? active,
+  ) {
     final items = rawItems.cast<Map>();
-    final title = (items.isNotEmpty ? (items.first['title']?.toString() ?? items.first['headerTitle']?.toString() ?? '') : '');
+    final title = (items.isNotEmpty
+        ? (items.first['title']?.toString() ??
+              items.first['headerTitle']?.toString() ??
+              '')
+        : '');
     return FSidebar(
       header: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -308,7 +443,10 @@ class UiSurfaceTreeRenderer {
       ),
       children: items.map((item) {
         final label = item['label']?.toString() ?? '';
-        final target = item['targetSurfaceKind']?.toString() ?? item['path']?.toString() ?? label;
+        final target =
+            item['targetSurfaceKind']?.toString() ??
+            item['path']?.toString() ??
+            label;
         return FSidebarItem(
           label: Text(label),
           selected: active == target,
@@ -329,9 +467,17 @@ class UiSurfaceTreeRenderer {
     final title = (props['title'] ?? props['headerTitle'] ?? '').toString();
     final menuChildren = childrenList.isNotEmpty
         ? childrenList
-            .cast<Map<String, Object?>>()
-            .map((c) => build(c, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget))
-            .toList()
+              .cast<Map<String, Object?>>()
+              .map(
+                (c) => build(
+                  c,
+                  onEvent,
+                  rfwHost: rfwHost,
+                  onNavSelected: onNavSelected,
+                  activeTarget: activeTarget,
+                ),
+              )
+              .toList()
         : const <Widget>[];
     return FSidebar(
       header: Padding(
@@ -358,13 +504,22 @@ class UiSurfaceTreeRenderer {
     String? active,
   ) {
     final label = (props['label'] ?? props['text'] ?? '').toString();
-    final target = (props['targetSurfaceKind'] ?? props['target'] ?? props['path'] ?? label).toString();
+    final target =
+        (props['targetSurfaceKind'] ??
+                props['target'] ??
+                props['path'] ??
+                label)
+            .toString();
     final isSel = active == target;
     return FSidebarItem(
       label: Text(label),
       selected: isSel,
       onPress: () {
-        onEvent('press', {'label': label, 'targetSurfaceKind': target, ...props});
+        onEvent('press', {
+          'label': label,
+          'targetSurfaceKind': target,
+          ...props,
+        });
         onNav?.call(target);
       },
     );
@@ -379,10 +534,23 @@ class UiSurfaceTreeRenderer {
   ) {
     final items = childrenList
         .cast<Map<String, Object?>>()
-        .map((c) => _buildNeuronMenuItem((c['Props'] ?? c['props'] ?? c) as Map<String, Object?>, onEvent, onNav, active))
+        .map(
+          (c) => _buildNeuronMenuItem(
+            (c['Props'] ?? c['props'] ?? c) as Map<String, Object?>,
+            onEvent,
+            onNav,
+            active,
+          ),
+        )
         .toList();
-    final title = (sidebarProps['title']?.toString() ?? sidebarProps['headerTitle']?.toString()
-      ?? (childrenList.isNotEmpty ? ((childrenList.first as Map)['title']?.toString() ?? (childrenList.first as Map)['headerTitle']?.toString() ?? '') : ''));
+    final title =
+        (sidebarProps['title']?.toString() ??
+        sidebarProps['headerTitle']?.toString() ??
+        (childrenList.isNotEmpty
+            ? ((childrenList.first as Map)['title']?.toString() ??
+                  (childrenList.first as Map)['headerTitle']?.toString() ??
+                  '')
+            : ''));
     return FSidebar(
       header: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -418,28 +586,60 @@ class UiSurfaceTreeRenderer {
       final cm = c as Map<String, Object?>;
       final cType = (cm['Type'] ?? cm['type'] ?? '').toString().toLowerCase();
       if (cType.contains('header')) {
-        header = build(cm, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget);
+        header = build(
+          cm,
+          onEvent,
+          rfwHost: rfwHost,
+          onNavSelected: onNavSelected,
+          activeTarget: activeTarget,
+        );
       } else if (cType.contains('sidebar')) {
-        sidebar = build(cm, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget);
+        sidebar = build(
+          cm,
+          onEvent,
+          rfwHost: rfwHost,
+          onNavSelected: onNavSelected,
+          activeTarget: activeTarget,
+        );
       } else if (cType.contains('footer') || cType.contains('bottomnav')) {
-        footer = build(cm, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget);
+        footer = build(
+          cm,
+          onEvent,
+          rfwHost: rfwHost,
+          onNavSelected: onNavSelected,
+          activeTarget: activeTarget,
+        );
       } else {
-        child = build(cm, onEvent, rfwHost: rfwHost, onNavSelected: onNavSelected, activeTarget: activeTarget);
+        child = build(
+          cm,
+          onEvent,
+          rfwHost: rfwHost,
+          onNavSelected: onNavSelected,
+          activeTarget: activeTarget,
+        );
       }
     }
 
     return FScaffold(
-      header: header is SizedBox ? FHeader(title: Text((props['title'] ?? '').toString())) : header,
+      header: header is SizedBox
+          ? FHeader(title: Text((props['title'] ?? '').toString()))
+          : header,
       sidebar: sidebar is SizedBox ? null : sidebar,
       footer: footer,
       child: child,
     );
   }
 
-  Widget _buildForuiAutocomplete(Map<String, Object?> props, RemoteEventHandler onEvent) {
+  Widget _buildForuiAutocomplete(
+    Map<String, Object?> props,
+    RemoteEventHandler onEvent,
+  ) {
     final itemsRaw = props['items'] ?? props['suggestions'] ?? const <Object>[];
-    final suggestions = itemsRaw is List ? itemsRaw.map((e) => e.toString()).toList() : <String>[];
-    final hint = (props['hint'] ?? props['placeholder'] ?? 'Search buddies').toString();
+    final suggestions = itemsRaw is List
+        ? itemsRaw.map((e) => e.toString()).toList()
+        : <String>[];
+    final hint = (props['hint'] ?? props['placeholder'] ?? 'Search buddies')
+        .toString();
 
     // ForUI based buddy/pack search (using FTextField + FTappable results from kit tree).
     // Typing not fully live (tree driven); selection fires synapse event.
@@ -457,7 +657,11 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 /// Local ForUI search widget for buddy/pack autocomplete in dynamic trees (marketplace etc).
 /// Uses FTextField + results as FTappable FCard. Query select sends event for neuron/synapse handling.
 class _ForuiBuddySearch extends StatefulWidget {
-  const _ForuiBuddySearch({required this.hint, required this.suggestions, required this.onSelect});
+  const _ForuiBuddySearch({
+    required this.hint,
+    required this.suggestions,
+    required this.onSelect,
+  });
 
   final String hint;
   final List<String> suggestions;
@@ -473,19 +677,19 @@ class _ForuiBuddySearchState extends State<_ForuiBuddySearch> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        FTextField(
-          label: Text(widget.hint),
-          hint: widget.hint,
-        ),
+        FTextField(label: Text(widget.hint), hint: widget.hint),
         const SizedBox(height: 8),
-        ...widget.suggestions.take(5).map((s) => FTappable(
-          onPress: () => widget.onSelect(s),
-          child: FCard(title: Text(s)),
-        )),
+        ...widget.suggestions
+            .take(5)
+            .map(
+              (s) => FTappable(
+                onPress: () => widget.onSelect(s),
+                child: FCard(title: Text(s)),
+              ),
+            ),
       ],
     );
   }
-
 }
 
 TextStyle _sidebarTitleStyle() {
@@ -494,4 +698,151 @@ TextStyle _sidebarTitleStyle() {
     return FTheme.of(ctx).typography.lg;
   }
   return const TextStyle(fontSize: 16, color: Color(0xFFE0E0E0));
+}
+
+class _NeuronForm extends StatefulWidget {
+  const _NeuronForm({required this.props, required this.onEvent});
+
+  final Map<String, Object?> props;
+  final RemoteEventHandler onEvent;
+
+  @override
+  State<_NeuronForm> createState() => _NeuronFormState();
+}
+
+class _NeuronFormState extends State<_NeuronForm> {
+  final Map<String, TextEditingController> _controllers = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _syncControllers();
+  }
+
+  @override
+  void didUpdateWidget(covariant _NeuronForm oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncControllers();
+  }
+
+  @override
+  void dispose() {
+    for (final controller in _controllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  void _syncControllers() {
+    final names = _fields()
+        .map((field) => (field['name'] ?? '').toString())
+        .where((name) => name.isNotEmpty)
+        .toSet();
+
+    for (final name in names) {
+      _controllers.putIfAbsent(name, () => TextEditingController());
+    }
+
+    final stale = _controllers.keys
+        .where((key) => !names.contains(key))
+        .toList();
+    for (final key in stale) {
+      _controllers.remove(key)?.dispose();
+    }
+  }
+
+  List<Map<String, Object?>> _fields() {
+    final raw = widget.props['fields'];
+    if (raw is! List) return const [];
+    return raw
+        .whereType<Map>()
+        .map(
+          (field) => field.map((key, value) => MapEntry(key.toString(), value)),
+        )
+        .toList();
+  }
+
+  void _submit() {
+    final submitAction = widget.props['submitAction'];
+    final action = submitAction is Map
+        ? submitAction.map((key, value) => MapEntry(key.toString(), value))
+        : <String, Object?>{};
+    final actionProps = action['props'];
+    final props = actionProps is Map
+        ? actionProps.map((key, value) => MapEntry(key.toString(), value))
+        : <String, Object?>{};
+
+    final clientId = widget.props['clientId'];
+    if (clientId != null) {
+      props['clientId'] = clientId;
+    }
+
+    for (final entry in _controllers.entries) {
+      props[entry.key] = entry.value.text;
+    }
+
+    final synapseType = (action['synapseType'] ?? widget.props['synapseType'])
+        ?.toString();
+    if (synapseType == null || synapseType.isEmpty) return;
+
+    widget.onEvent('action', {
+      'actionId': action['actionId'] ?? synapseType,
+      'label': action['label'] ?? widget.props['submitLabel'] ?? 'Submit',
+      'synapseType': synapseType,
+      'props': props,
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final fields = _fields();
+    final title = widget.props['title']?.toString() ?? '';
+    final error = widget.props['error']?.toString();
+    final submitLabel = widget.props['submitLabel']?.toString() ?? 'Submit';
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: FCard(
+          title: Text(title.isEmpty ? 'Form' : title),
+          subtitle: error == null || error.isEmpty
+              ? null
+              : Text(error, style: const TextStyle(color: Colors.redAccent)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < fields.length; i++) ...[
+                _field(fields[i], i == fields.length - 1),
+                if (i != fields.length - 1) const SizedBox(height: 12),
+              ],
+              const SizedBox(height: 16),
+              FButton(onPress: _submit, child: Text(submitLabel)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _field(Map<String, Object?> field, bool last) {
+    final name = (field['name'] ?? '').toString();
+    final label = (field['label'] ?? name).toString();
+    final kind = (field['kind'] ?? 'text').toString().toLowerCase();
+    final required = field['required'] == true;
+    final controller = _controllers[name] ??= TextEditingController();
+
+    return TextField(
+      controller: controller,
+      obscureText: kind == 'password',
+      textInputAction: last ? TextInputAction.done : TextInputAction.next,
+      onSubmitted: (_) {
+        if (last) _submit();
+      },
+      decoration: InputDecoration(
+        labelText: required ? '$label *' : label,
+        border: const OutlineInputBorder(),
+      ),
+    );
+  }
 }
