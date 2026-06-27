@@ -54,8 +54,15 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
   void _connect() {
     try {
       final (host, port, secure) = resolveKernelEndpoint();
-      final channel = createKernelChannel(host: host, port: port, secure: secure);
-      final client = DigitalBrainGatewayClient(channel, interceptors: kernelInterceptors());
+      final channel = createKernelChannel(
+        host: host,
+        port: port,
+        secure: secure,
+      );
+      final client = DigitalBrainGatewayClient(
+        channel,
+        interceptors: kernelInterceptors(),
+      );
 
       _homeFeedSub?.cancel();
       final sub = client
@@ -65,7 +72,10 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
       setState(() {
         _channel = channel;
         _homeFeedSub = sub;
-        _uiClient = UiGatewayClient(channel, interceptors: kernelInterceptors());
+        _uiClient = UiGatewayClient(
+          channel,
+          interceptors: kernelInterceptors(),
+        );
       });
       _openUiSession();
     } catch (_) {
@@ -78,7 +88,9 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
     if (c == null) return;
     final input = StreamController<ui.UiInputSynapse>();
     _uiInput = input;
-    _uiSessionSub = c.engageUiSession(input.stream).listen((_) {}, onError: (_) {});
+    _uiSessionSub = c
+        .engageUiSession(input.stream)
+        .listen((_) {}, onError: (_) {});
   }
 
   void _onCard(gw.RfwCardEnvelope envelope) {
@@ -89,7 +101,8 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
     // Runtime-only ForUI notification from neuron/synapse (no static Flutter view).
     // Neuron emits UiSurface(kind: "toast" | "notification") with title/description.
     if (kind == 'toast' || kind == 'notification' || kind.contains('toast')) {
-      final titleText = (data['title'] ?? data['message'] ?? 'Hello World!').toString();
+      final titleText = (data['title'] ?? data['message'] ?? 'Hello World!')
+          .toString();
       final descText = data['description']?.toString();
       Future.microtask(() {
         if (mounted) {
@@ -105,18 +118,26 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
 
     setState(() {
       final treeNode = data['tree'] as Map?;
-      final hasShellMarker = kind == 'app-shell' || kind == 'widget-tree' || kind.contains('shell') || data['activeContent'] != null;
-      final treeLooksLikeShell = treeNode != null && (
-        treeNode['activeContent'] != null ||
-        (treeNode['Props'] as Map?)?['activeContent'] != null ||
-        (treeNode['Type']?.toString().toLowerCase().contains('scaffold') ?? false) ||
-        (treeNode['Type']?.toString().toLowerCase() == 'app-shell')
-      );
+      final hasShellMarker =
+          kind == 'app-shell' ||
+          kind == 'widget-tree' ||
+          kind.contains('shell') ||
+          data['activeContent'] != null;
+      final treeLooksLikeShell =
+          treeNode != null &&
+          (treeNode['activeContent'] != null ||
+              (treeNode['Props'] as Map?)?['activeContent'] != null ||
+              (treeNode['Type']?.toString().toLowerCase().contains(
+                    'scaffold',
+                  ) ??
+                  false) ||
+              (treeNode['Type']?.toString().toLowerCase() == 'app-shell'));
       if (hasShellMarker || treeLooksLikeShell) {
         _shellTree = data;
-        final ac = data['activeContent']
-            ?? (treeNode)?['activeContent']
-            ?? ((treeNode)?['Props'] as Map?)?['activeContent'];
+        final ac =
+            data['activeContent'] ??
+            (treeNode)?['activeContent'] ??
+            ((treeNode)?['Props'] as Map?)?['activeContent'];
         if (ac is String && ac.isNotEmpty) {
           _selectedTarget = ac;
         }
@@ -127,13 +148,22 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
   }
 
   void _handleSurfaceEvent(String name, Map<String, Object?> args) {
-    final target = (args['targetSurfaceKind'] ?? args['target'] ?? args['path'])?.toString();
+    final target = (args['targetSurfaceKind'] ?? args['target'] ?? args['path'])
+        ?.toString();
     if (target != null && target.isNotEmpty) {
       _goTo(target);
     }
     if (name == 'press' || name == 'select' || name == 'action') {
-      final action = (args['action'] is Map ? (args['action'] as Map).cast<String, Object?>() : args);
-      final elementId = ((action['actionId'] as String?) ?? (action['synapseType'] as String?) ?? target ?? _selectedTarget ?? name.toString()).toString();
+      final action = (args['action'] is Map
+          ? (args['action'] as Map).cast<String, Object?>()
+          : args);
+      final elementId =
+          ((action['actionId'] as String?) ??
+                  (action['synapseType'] as String?) ??
+                  target ??
+                  _selectedTarget ??
+                  name.toString())
+              .toString();
       final payload = jsonEncode(action);
       _uiInput?.add(
         ui.UiInputSynapse()
@@ -151,6 +181,49 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
       if (d is Map) return d.map((k, v) => MapEntry(k.toString(), v));
     } catch (_) {}
     return const {};
+  }
+
+  Widget? _renderEnvelope(
+    gw.RfwCardEnvelope? env,
+    UiSurfaceTreeRenderer renderer,
+    String emptyKey,
+  ) {
+    if (env == null) return null;
+
+    final data = _decode(env.dataJson);
+    final treeNode = data['tree'] as Map<String, Object?>?;
+    if (treeNode != null) {
+      return SizedBox.expand(
+        child: renderer.build(
+          treeNode,
+          _handleSurfaceEvent,
+          rfwHost: _rfwHost,
+          onNavSelected: _goTo,
+          activeTarget: _selectedTarget,
+        ),
+      );
+    }
+
+    final source = data['source'] as String?;
+    final root =
+        (data['rootWidget'] as String? ??
+                data['root'] as String? ??
+                env.rootWidget)
+            .toString();
+    if (source != null && source.isNotEmpty) {
+      final key = env.correlationId.isEmpty ? emptyKey : env.correlationId;
+      _rfwHost.ensureLoaded(key, source);
+      return SizedBox.expand(
+        child: _rfwHost.render(
+          key,
+          data: data,
+          onEvent: _handleSurfaceEvent,
+          rootWidget: root,
+        ),
+      );
+    }
+
+    return null;
   }
 
   void _goTo(String target) {
@@ -199,7 +272,9 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
       if (children is List && children.isNotEmpty) {
         for (final c in children) {
           final childMap = c as Map;
-          final cType = (childMap['Type'] ?? childMap['type'] ?? '').toString().toLowerCase();
+          final cType = (childMap['Type'] ?? childMap['type'] ?? '')
+              .toString()
+              .toLowerCase();
           if (cType.contains('sidebar') || cType.contains('menu')) {
             sidebarWidget = renderer.build(
               Map<String, Object?>.from(childMap),
@@ -222,34 +297,13 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
 
       Widget body;
       if (activeEnvelope != null) {
-        final data = _decode(activeEnvelope.dataJson);
-        final treeNode = data['tree'] as Map<String, Object?>?;
-        if (treeNode != null) {
-          final rendered = renderer.build(
-            treeNode,
-            _handleSurfaceEvent,
-            rfwHost: _rfwHost,
-            onNavSelected: _goTo,
-            activeTarget: _selectedTarget,
-          );
-          body = SizedBox.expand(child: rendered);
-        } else {
-          final source = data['source'] as String?;
-          final root = (data['rootWidget'] as String? ?? data['root'] as String? ?? activeEnvelope.rootWidget).toString();
-          if (source != null && source.isNotEmpty) {
-            final key = activeEnvelope.correlationId.isEmpty ? 'shell-content-$_selectedTarget' : activeEnvelope.correlationId;
-            _rfwHost.ensureLoaded(key, source);
-            final rendered = _rfwHost.render(
-              key,
-              data: data,
-              onEvent: _handleSurfaceEvent,
-              rootWidget: root,
-            );
-            body = SizedBox.expand(child: rendered);
-          } else {
-            body = const SizedBox.shrink();
-          }
-        }
+        body =
+            _renderEnvelope(
+              activeEnvelope,
+              renderer,
+              'shell-content-$_selectedTarget',
+            ) ??
+            const SizedBox.shrink();
       } else {
         body = const SizedBox.shrink();
       }
@@ -259,34 +313,12 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
       // All UI is 100% from neuron trees / kit. No more .dart screens.
       final effectiveTarget = (_selectedTarget ?? '').toLowerCase();
       if (effectiveTarget.contains('market') || loc == '/marketplace') {
-        final env = _surfacesByKind['marketplace'] ?? _surfacesByKind[_selectedTarget ?? ''];
-        if (env != null) {
-          final data = _decode(env.dataJson);
-          final treeNode = data['tree'] as Map<String, Object?>?;
-          if (treeNode != null) {
-            body = SizedBox.expand(
-              child: renderer.build(
-                treeNode,
-                _handleSurfaceEvent,
-                rfwHost: _rfwHost,
-                onNavSelected: _goTo,
-                activeTarget: _selectedTarget,
-              ),
-            );
-          } else {
-            final source = data['source'] as String?;
-            final root = (data['rootWidget'] as String? ?? data['root'] as String? ?? env.rootWidget).toString();
-            if (source != null && source.isNotEmpty) {
-              final key = env.correlationId.isEmpty ? 'marketplace-surface' : env.correlationId;
-              _rfwHost.ensureLoaded(key, source);
-              body = SizedBox.expand(
-                child: _rfwHost.render(key, data: data, onEvent: _handleSurfaceEvent, rootWidget: root),
-              );
-            }
-          }
-        } else {
-          body = const Center(child: Text('Marketplace (neuron kit tree)'));
-        }
+        final env =
+            _surfacesByKind['marketplace'] ??
+            _surfacesByKind[_selectedTarget ?? ''];
+        body =
+            _renderEnvelope(env, renderer, 'marketplace-surface') ??
+            const Center(child: Text('Marketplace (neuron kit tree)'));
       }
 
       return FScaffold(
@@ -299,74 +331,62 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
     final loc = GoRouterState.of(context).uri.path;
 
     // Pure minimal fallback. Real UI (nav, content, all screens) comes exclusively from neuron-emitted UiWidgetTree / kit.
-    Widget fallbackBody = const Center(
-      child: Text('Waiting for full neuron tree (UI kit from synapses)'),
-    );
+    Widget fallbackBody =
+        _renderEnvelope(_surfacesByKind['login'], renderer, 'login-surface') ??
+        _renderEnvelope(
+          _surfacesByKind['installed-bundles'],
+          renderer,
+          'installed-fallback',
+        ) ??
+        _renderEnvelope(
+          _surfacesByKind['marketplace-list'] ?? _surfacesByKind['marketplace'],
+          renderer,
+          'marketplace-fallback',
+        ) ??
+        const Center(
+          child: Text('Waiting for full neuron tree (UI kit from synapses)'),
+        );
 
     // Marketplace migration to backend UI also applies in pure fallback.
     // If a marketplace surface arrived (possible even before full shell tree), render it.
     // Marketplace is now fully from neuron-emitted UiWidgetTree using rich forui kit (no static screen).
     final effectiveTarget = (_selectedTarget ?? '').toLowerCase();
     if (effectiveTarget.contains('market') || loc == '/marketplace') {
-      final env = _surfacesByKind['marketplace'] ?? _surfacesByKind[_selectedTarget ?? ''];
-      if (env != null) {
-        final data = _decode(env.dataJson);
-        final treeNode = data['tree'] as Map<String, Object?>?;
-        if (treeNode != null) {
-          fallbackBody = SizedBox.expand(
-            child: renderer.build(
-              treeNode,
-              _handleSurfaceEvent,
-              rfwHost: _rfwHost,
-              onNavSelected: _goTo,
-              activeTarget: _selectedTarget,
+      final env =
+          _surfacesByKind['marketplace'] ??
+          _surfacesByKind[_selectedTarget ?? ''];
+      fallbackBody =
+          _renderEnvelope(env, renderer, 'marketplace-fallback') ??
+          const Center(
+            child: Text(
+              'Marketplace (neuron kit tree - use dev authoring via dispatch or MCP)',
             ),
           );
-        } else {
-          final source = data['source'] as String?;
-          final root = (data['rootWidget'] as String? ?? data['root'] as String? ?? env.rootWidget).toString();
-          if (source != null && source.isNotEmpty) {
-            final key = env.correlationId.isEmpty ? 'marketplace-fallback' : env.correlationId;
-            _rfwHost.ensureLoaded(key, source);
-            fallbackBody = SizedBox.expand(
-              child: _rfwHost.render(key, data: data, onEvent: _handleSurfaceEvent, rootWidget: root),
-            );
-          }
-        }
-      } else {
-        fallbackBody = const Center(child: Text('Marketplace (neuron kit tree - use dev authoring via dispatch or MCP)'));
-      }
     }
-    if (effectiveTarget.contains('install') || effectiveTarget.contains('bundle') || loc == '/installed') {
-      gw.RfwCardEnvelope? env = _surfacesByKind['installed-bundles'] ?? _surfacesByKind[_selectedTarget ?? ''];
+    if (effectiveTarget.contains('install') ||
+        effectiveTarget.contains('bundle') ||
+        loc == '/installed') {
+      gw.RfwCardEnvelope? env =
+          _surfacesByKind['installed-bundles'] ??
+          _surfacesByKind[_selectedTarget ?? ''];
       if (env == null) {
         for (final e in _surfacesByKind.values) {
           final dk = _decode(e.dataJson)['kind']?.toString() ?? '';
-          if (dk.contains('install') || dk.contains('bundle')) { env = e; break; }
+          if (dk.contains('install') || dk.contains('bundle')) {
+            env = e;
+            break;
+          }
         }
       }
-      if (env != null) {
-        final data = _decode(env.dataJson);
-        final treeNode = data['tree'] as Map<String, Object?>?;
-        if (treeNode != null) {
-          fallbackBody = SizedBox.expand(
-            child: renderer.build(
-              treeNode,
-              _handleSurfaceEvent,
-              rfwHost: _rfwHost,
-              onNavSelected: _goTo,
-              activeTarget: _selectedTarget,
-            ),
-          );
-        }
-      }
+      fallbackBody =
+          _renderEnvelope(env, renderer, 'installed-fallback') ?? fallbackBody;
     }
 
     return FScaffold(
       header: const FHeader(title: Text('DigitalBrain')),
-      sidebar: const SizedBox.shrink(), // sidebar + nav fully from emitted shell tree (neuron kit)
+      sidebar:
+          const SizedBox.shrink(), // sidebar + nav fully from emitted shell tree (neuron kit)
       child: fallbackBody,
     );
   }
 }
-

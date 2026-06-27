@@ -4,7 +4,6 @@ import 'package:forui/forui.dart';
 import 'digital_brain_ui/digital_brain_ui.dart';
 import 'router.dart';
 import 'theme/digitalbrain_theme.dart';
-import 'rfw_host/rfw_runtime_host.dart'; // for navigatorKey (surface driven root)
 
 class DigitalBrainApp extends StatelessWidget {
   const DigitalBrainApp({super.key});
