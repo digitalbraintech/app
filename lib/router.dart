@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'features/canvas/living_canvas_screen.dart';
@@ -9,18 +10,16 @@ import 'shell/forui_app_shell.dart';
 final digitalbrainRouter = GoRouter(
   initialLocation: '/',
   routes: [
-    // Canvas remains the advanced immersive RFW surface host.
-    GoRoute(
-      path: '/',
-      name: 'canvas',
-      builder: (context, state) => const LivingCanvasScreen(),
-    ),
-    // Live neuron-driven shell owns chrome + body for surface-driven views (navItems + activeContent from app-shell tree).
-    // Surface routes (marketplace, tasks, etc.) are now internal to ForuiAppShell body (no placeholders).
-    // GoRouter kept minimal for canvas, chat, gallery, spikes and deep links.
+    // Main experience is the live neuron-driven shell (chrome + body from app-shell/widget-tree via UiSurfaceTreeRenderer + kit nodes).
+    // All UI must come from neurons/synapses; client is thin host only.
     ShellRoute(
       builder: (context, state, child) => ForuiAppShell(child: child),
       routes: [
+        GoRoute(
+          path: '/',
+          name: 'shell',
+          builder: (context, state) => const SizedBox.shrink(), // body driven by shell tree activeContent
+        ),
         GoRoute(
           path: '/chat',
           name: 'chat',
@@ -32,6 +31,12 @@ final digitalbrainRouter = GoRouter(
           builder: (context, state) => const ForuiUiKitGallery(),
         ),
       ],
+    ),
+    // Canvas is advanced immersive (still uses some RFW surfaces but will be further thinned in future steps).
+    GoRoute(
+      path: '/canvas',
+      name: 'canvas',
+      builder: (context, state) => const LivingCanvasScreen(),
     ),
     GoRoute(
       path: '/spike',
