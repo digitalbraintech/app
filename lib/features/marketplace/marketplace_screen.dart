@@ -17,6 +17,15 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   late final List<Pack> _packs;
   late final List<String> _allPackNames;
 
+  // Dev authoring state for dogfooding: develop DigitalBrain using DigitalBrain + UI
+  String _devPackName = 'My.DevFeature';
+  String _devCode = '''
+public sealed class MyDevFeature : DigitalBrain.Core.Distribution.IPackBehavior
+{
+    public string Respond(string input) => "Dev feature handled: " + (input ?? "");
+}
+''';
+
   static const List<String> _recommendedNames = [
     'DigitalBrain.UI.ForUI',
     'ClosedLoop.Reviewer',
@@ -277,6 +286,67 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
             'Type or pick to filter live. Clear by submitting empty.',
             style: TextStyle(fontSize: 11, color: FTheme.of(context).colors.mutedForeground),
           ),
+          const SizedBox(height: 12),
+
+          // Self-development scenario: use this UI (part of the brain) to author and publish new packs
+          // back into the running DigitalBrain (kernel + surfaces). "Develop DigitalBrain using DigitalBrain".
+          FCard(
+            title: const Text('Develop DigitalBrain using DigitalBrain + UI'),
+            subtitle: const Text('Author a pack (or kernel version), publish & install via the system itself. UI updates live from surfaces.'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  decoration: const InputDecoration(labelText: 'Pack name (or "kernel" for self-update)', hintText: 'My.DevFeature or kernel'),
+                  onChanged: (v) => setState(() => _devPackName = v),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  decoration: const InputDecoration(labelText: 'Code (C# for IPackBehavior; empty for kernel)'),
+                  maxLines: 5,
+                  onChanged: (v) => setState(() => _devCode = v),
+                ),
+                const SizedBox(height: 8),
+                Row(children: [
+                  FButton(
+                    onPress: () {
+                      _dispatch('publish', {
+                        'synapseType': 'PublishToMarketplace',
+                        'packName': _devPackName.isEmpty ? 'My.DevFeature' : _devPackName,
+                        'version': '1.0.0-dev',
+                        'code': _devCode,
+                        'ownerId': 'self-dev',
+                        'isPrivate': false,
+                        'commissionRate': 0.05,
+                        'description': 'Authored live inside DigitalBrain UI',
+                      });
+                      _dispatch('action', {'action': 'list', 'kind': 'marketplace'});
+                    },
+                    child: const Text('Publish Dev Pack'),
+                  ),
+                  const SizedBox(width: 8),
+                  FButton(
+                    variant: FButtonVariant.outline,
+                    onPress: () {
+                      _dispatch('publish', {
+                        'synapseType': 'PublishToMarketplace',
+                        'packName': 'kernel',
+                        'version': '0.4.0-dev',
+                        'code': '',
+                        'ownerId': 'self-dev',
+                        'isPrivate': false,
+                        'commissionRate': 0.0,
+                        'description': 'New kernel version via self-dev',
+                      });
+                      _dispatch('action', {'action': 'install', 'packName': 'kernel', 'version': '0.4.0-dev'});
+                    },
+                    child: const Text('Publish+Install New Kernel'),
+                  ),
+                ]),
+              ],
+            ),
+          ),
+
           const SizedBox(height: 12),
           Expanded(
             child: SingleChildScrollView(
