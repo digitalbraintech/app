@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:digitalbrain_flutter/grpc/digitalbrain.pb.dart' as gw;
 import 'package:digitalbrain_flutter/features/canvas/panel/canvas_panel.dart';
 import 'package:digitalbrain_flutter/features/canvas/panel/layout_store.dart';
+import 'package:digitalbrain_flutter/rfw_host/rfw_card_sources.dart';
 
 /// The window manager. Turns each [gw.RfwCardEnvelope] from `WatchHomeFeed`
 /// into a draggable/dockable [CanvasPanel], owns z-order + geometry, drives the
@@ -98,6 +99,12 @@ class PanelManager extends ChangeNotifier {
       } catch (_) {
         // Malformed payload degrades to an empty surface rather than crashing.
       }
+    }
+    if (env.rootWidget == 'TaskManagerCard' && (source == null || source.isEmpty)) {
+      source = kTaskManagerCardSource;
+    }
+    if (env.rootWidget == 'ChartCard' && (source == null || source.isEmpty)) {
+      source = kChartCardSource;
     }
     return RfwSurfaceSpec(
       libraryName: env.libraryName.isEmpty ? 'digitalbrain' : env.libraryName,
