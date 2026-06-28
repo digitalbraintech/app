@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:digitalbrain_flutter/grpc/digitalbrain.pbgrpc.dart';
 import 'package:digitalbrain_flutter/grpc/endpoint.dart';
 import 'package:digitalbrain_flutter/grpc/grpc_channel.dart';
+import 'package:digitalbrain_flutter/grpc/action_dispatch.dart';
 import 'package:digitalbrain_flutter/rfw_host/inline_rfw_surface.dart';
 import 'package:digitalbrain_flutter/rfw_host/rfw_runtime_host.dart';
 import 'package:digitalbrain_flutter/grpc/digitalbrain.pb.dart' as gw;
@@ -27,6 +28,7 @@ class ForuiAppShell extends StatefulWidget {
 class _ForuiAppShellState extends State<ForuiAppShell> {
   final RfwRuntimeHost _rfwHost = RfwRuntimeHost();
   dynamic _channel;
+  DigitalBrainGatewayClient? _gatewayClient;
   UiGatewayClient? _uiClient;
   StreamController<ui.UiInputSynapse>? _uiInput;
   StreamSubscription<ui.UiStateSignal>? _uiSessionSub;
@@ -83,6 +85,7 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
 
       setState(() {
         _channel = channel;
+        _gatewayClient = client;
         _homeFeedSub = sub;
         _feedStatus = 'Waiting for neuron UI feed from $endpoint';
         _uiClient = UiGatewayClient(
@@ -190,24 +193,16 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
     if (target != null && target.isNotEmpty) {
       _goTo(target);
     }
-    if (name == 'press' || name == 'select' || name == 'action') {
-      final action = (args['action'] is Map
-          ? (args['action'] as Map).cast<String, Object?>()
-          : args);
-      final elementId =
-          ((action['actionId'] as String?) ??
-                  (action['synapseType'] as String?) ??
-                  target ??
-                  _selectedTarget ??
-                  name.toString())
-              .toString();
-      final payload = jsonEncode(action);
-      _uiInput?.add(
-        ui.UiInputSynapse()
-          ..brainId = 'default'
-          ..elementId = elementId
-          ..interaction = ui.UiInputSynapse_InteractionType.CLICK
-          ..inputPayload = payload,
+    // Fire the action's synapse over the UNARY Send RPC. The browser channel is
+    // gRPC-Web, which has no client/bidi streaming, so EngageUiSession cannot carry
+    // input — only unary + server-streaming work there. Send is the gRPC-Web-safe path.
+    final envelope = buildActionEnvelope(name, args);
+    final client = _gatewayClient;
+    if (envelope != null && client != null) {
+      client.send(envelope).then(
+        (_) {},
+        onError: (Object error) =>
+            debugPrint('DigitalBrain action dispatch failed: $error'),
       );
     }
   }
