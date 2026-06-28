@@ -120,6 +120,9 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
     });
   }
 
+  // Receive-only: this bidi session carries server->client UiStateSignals. Client->server
+  // actions go via the unary Send RPC (see _handleSurfaceEvent) because gRPC-Web cannot
+  // client-stream. Do NOT route sends back through _uiInput here.
   void _openUiSession() {
     final c = _uiClient;
     if (c == null) return;
