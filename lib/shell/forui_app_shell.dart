@@ -199,11 +199,13 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
     final envelope = buildActionEnvelope(name, args);
     final client = _gatewayClient;
     if (envelope != null && client != null) {
-      client.send(envelope).then(
-        (_) {},
-        onError: (Object error) =>
-            debugPrint('DigitalBrain action dispatch failed: $error'),
-      );
+      client
+          .send(envelope)
+          .then(
+            (_) {},
+            onError: (Object error) =>
+                debugPrint('DigitalBrain action dispatch failed: $error'),
+          );
     }
   }
 
@@ -341,10 +343,16 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
             const Center(child: Text('Marketplace (neuron kit tree)'));
       }
 
-      return FScaffold(
-        sidebar: sidebarWidget,
-        header: headerWidget,
-        child: body,
+      // Stable anchor: a neuron-emitted shell tree only arrives after sign-in, so
+      // this identifier marks the signed-in state for tests and assistive tech.
+      return Semantics(
+        identifier: 'app-shell-ready',
+        explicitChildNodes: true,
+        child: FScaffold(
+          sidebar: sidebarWidget,
+          header: headerWidget,
+          child: body,
+        ),
       );
     }
 

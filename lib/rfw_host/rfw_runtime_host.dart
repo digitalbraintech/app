@@ -817,7 +817,11 @@ class _NeuronFormState extends State<_NeuronForm> {
                 if (i != fields.length - 1) const SizedBox(height: 12),
               ],
               const SizedBox(height: 16),
-              FButton(onPress: _submit, child: Text(submitLabel)),
+              Semantics(
+                identifier: 'form-submit',
+                button: true,
+                child: FButton(onPress: _submit, child: Text(submitLabel)),
+              ),
             ],
           ),
         ),
@@ -832,18 +836,22 @@ class _NeuronFormState extends State<_NeuronForm> {
     final required = field['required'] == true;
     final controller = _controllers[name] ??= TextEditingController();
 
-    return Material(
-      type: MaterialType.transparency,
-      child: TextField(
-        controller: controller,
-        obscureText: kind == 'password',
-        textInputAction: last ? TextInputAction.done : TextInputAction.next,
-        onSubmitted: (_) {
-          if (last) _submit();
-        },
-        decoration: InputDecoration(
-          labelText: required ? '$label *' : label,
-          border: const OutlineInputBorder(),
+    return Semantics(
+      identifier: 'field-$name',
+      textField: true,
+      child: Material(
+        type: MaterialType.transparency,
+        child: TextField(
+          controller: controller,
+          obscureText: kind == 'password',
+          textInputAction: last ? TextInputAction.done : TextInputAction.next,
+          onSubmitted: (_) {
+            if (last) _submit();
+          },
+          decoration: InputDecoration(
+            labelText: required ? '$label *' : label,
+            border: const OutlineInputBorder(),
+          ),
         ),
       ),
     );
