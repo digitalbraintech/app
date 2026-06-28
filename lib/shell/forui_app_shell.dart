@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:digitalbrain_flutter/grpc/digitalbrain.pbgrpc.dart';
 import 'package:digitalbrain_flutter/grpc/endpoint.dart';
 import 'package:digitalbrain_flutter/grpc/grpc_channel.dart';
+import 'package:digitalbrain_flutter/rfw_host/inline_rfw_surface.dart';
 import 'package:digitalbrain_flutter/rfw_host/rfw_runtime_host.dart';
 import 'package:digitalbrain_flutter/grpc/digitalbrain.pb.dart' as gw;
 import 'package:digitalbrain_flutter/grpc/uigateway.pbgrpc.dart';
@@ -240,26 +241,14 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
       );
     }
 
-    final source = data['source'] as String?;
-    final root =
-        (data['rootWidget'] as String? ??
-                data['root'] as String? ??
-                env.rootWidget)
-            .toString();
-    if (source != null && source.isNotEmpty) {
-      final key = env.correlationId.isEmpty ? emptyKey : env.correlationId;
-      _rfwHost.ensureLoaded(key, source);
-      return SizedBox.expand(
-        child: _rfwHost.render(
-          key,
-          data: data,
-          onEvent: _handleSurfaceEvent,
-          rootWidget: root,
-        ),
-      );
-    }
-
-    return null;
+    return buildInlineRfwSurface(
+      host: _rfwHost,
+      data: data,
+      fallbackKey: emptyKey,
+      defaultRootWidget: env.rootWidget,
+      onEvent: _handleSurfaceEvent,
+      correlationId: env.correlationId,
+    );
   }
 
   void _goTo(String target) {
