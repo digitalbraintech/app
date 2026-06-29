@@ -10,6 +10,7 @@ import 'ui_button.dart';
 import 'ui_checkbox.dart';
 import 'ui_column.dart';
 import 'ui_date_field.dart';
+import 'ui_dialog.dart';
 import 'ui_divider.dart';
 import 'ui_gap.dart';
 import 'ui_header.dart';
@@ -23,6 +24,7 @@ import 'ui_radio_group.dart';
 import 'ui_row.dart';
 import 'ui_screen.dart';
 import 'ui_select.dart';
+import 'ui_sheet.dart';
 import 'ui_slider.dart';
 import 'ui_sidebar.dart';
 import 'ui_spinner.dart';
@@ -32,6 +34,7 @@ import 'ui_text.dart';
 import 'ui_text_area.dart';
 import 'ui_text_field.dart';
 import 'ui_tile.dart';
+import 'ui_toast.dart';
 import 'ui_tooltip.dart';
 
 // Maps a ui:* node (type already lower-cased by the tree renderer) to its ForUI cover widget.
@@ -131,6 +134,12 @@ Widget buildUiNode(
     case 'ui:tooltip':
       final tipKids = kids();
       return UiKitTooltip(tip: s('tip'), child: tipKids.isEmpty ? const SizedBox.shrink() : tipKids.first);
+    case 'ui:dialog':
+      return UiKitDialog(open: props['open'] == true, title: s('title'), children: kids());
+    case 'ui:sheet':
+      return UiKitSheet(open: props['open'] == true, title: s('title'), children: kids());
+    case 'ui:toast':
+      return UiKitToast(message: s('message'));
     default:
       return const SizedBox.shrink();
   }
