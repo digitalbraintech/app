@@ -262,7 +262,10 @@ class _ForuiAppShellState extends State<ForuiAppShell> {
       }
       return;
     }
-    if (t.contains('gallery') || t == '/gallery') {
+    // Exact match only: a substring check here also swallows absolute deep-links that merely
+    // contain "gallery" (e.g. /experience/ui-gallery/ui-gallery), sending them to the blank
+    // /gallery route instead of letting the absolute-path branch below navigate to them.
+    if (t == 'gallery' || t == '/gallery') {
       context.go('/gallery');
       return;
     }

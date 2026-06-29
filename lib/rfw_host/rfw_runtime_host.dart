@@ -753,13 +753,16 @@ class _NeuronFormState extends State<_NeuronForm> {
   }
 
   void _syncControllers() {
-    final names = _fields()
-        .map((field) => (field['name'] ?? '').toString())
-        .where((name) => name.isNotEmpty)
-        .toSet();
-
-    for (final name in names) {
-      _controllers.putIfAbsent(name, () => TextEditingController());
+    final names = <String>{};
+    for (final field in _fields()) {
+      final name = (field['name'] ?? '').toString();
+      if (name.isEmpty) continue;
+      names.add(name);
+      // Seed the controller with the field's pre-filled value the first time we see it.
+      _controllers.putIfAbsent(
+        name,
+        () => TextEditingController(text: (field['value'] ?? '').toString()),
+      );
     }
 
     final stale = _controllers.keys
