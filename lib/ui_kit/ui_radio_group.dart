@@ -16,8 +16,8 @@ class _UiKitRadioGroupState extends State<UiKitRadioGroup> {
   // Tracks the currently selected option; null = nothing selected yet.
   String? _selected;
 
-  void _onSelect(String option, bool tapped) {
-    if (!tapped) return;
+  void _onSelect(String option, bool selected) {
+    if (!selected) return;
     setState(() => _selected = option);
     UiKitFormScope.of(context)?.set(widget.name, option);
   }

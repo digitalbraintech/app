@@ -101,4 +101,30 @@ void main() {
     expect(controller.values['level'], isNotNull);
     expect(double.tryParse(controller.values['level']!), isNotNull);
   });
+
+  testWidgets('DateField capture: text entry writes ISO yyyy-MM-dd string to form scope', (tester) async {
+    final controller = UiKitFormController();
+    await tester.pumpWidget(MaterialApp(
+      home: FTheme(
+        data: FThemes.neutral.light.touch,
+        child: FScaffold(
+          child: UiKitFormScope(
+            controller: controller,
+            child: UiKitDateField(name: 'when'),
+          ),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    // Find the text field that is nested inside FDateField.
+    final textFieldFinder = find.byType(FTextField);
+    expect(textFieldFinder, findsWidgets);
+
+    // FDateField accepts MM/DD/YYYY format via text input.
+    await tester.enterText(textFieldFinder.first, '06/15/2024');
+    await tester.pumpAndSettle();
+
+    expect(controller.values['when'], equals('2024-06-15'));
+  });
 }
