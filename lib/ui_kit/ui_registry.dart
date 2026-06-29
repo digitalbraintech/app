@@ -4,6 +4,7 @@ import 'package:rfw/rfw.dart' show RemoteEventHandler;
 import 'ui_alert.dart';
 import 'ui_avatar.dart';
 import 'ui_badge.dart';
+import 'ui_bottom_nav.dart';
 import 'ui_breadcrumb.dart';
 import 'ui_button.dart';
 import 'ui_checkbox.dart';
@@ -23,6 +24,7 @@ import 'ui_row.dart';
 import 'ui_screen.dart';
 import 'ui_select.dart';
 import 'ui_slider.dart';
+import 'ui_sidebar.dart';
 import 'ui_spinner.dart';
 import 'ui_switch.dart';
 import 'ui_tabs.dart';
@@ -114,6 +116,10 @@ Widget buildUiNode(
       return UiKitTabs(items: itemList(), pack: s('pack'), experienceId: s('experienceId'), onEvent: onEvent);
     case 'ui:breadcrumb':
       return UiKitBreadcrumb(items: itemList(), pack: s('pack'), experienceId: s('experienceId'), onEvent: onEvent);
+    case 'ui:sidebar':
+      return UiKitSidebar(items: itemList(), pack: s('pack'), experienceId: s('experienceId'), onEvent: onEvent);
+    case 'ui:bottomnav':
+      return UiKitBottomNav(items: itemList(), pack: s('pack'), experienceId: s('experienceId'), onEvent: onEvent);
     case 'ui:pagination':
       return UiKitPagination(items: itemList(), pack: s('pack'), experienceId: s('experienceId'), onEvent: onEvent);
     case 'ui:alert':
