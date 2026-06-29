@@ -2,9 +2,12 @@ import 'package:flutter/widgets.dart';
 import 'package:rfw/rfw.dart' show RemoteEventHandler;
 
 import 'ui_button.dart';
+import 'ui_checkbox.dart';
 import 'ui_panel.dart';
 import 'ui_screen.dart';
+import 'ui_switch.dart';
 import 'ui_text.dart';
+import 'ui_text_area.dart';
 import 'ui_text_field.dart';
 
 // Maps a ui:* node (type already lower-cased by the tree renderer) to its ForUI cover widget.
@@ -38,6 +41,12 @@ Widget buildUiNode(
         eventName: s('eventName'),
         onEvent: onEvent,
       );
+    case 'ui:checkbox':
+      return UiKitCheckbox(name: s('name'), label: s('label'));
+    case 'ui:switch':
+      return UiKitSwitch(name: s('name'), label: s('label'));
+    case 'ui:textarea':
+      return UiKitTextArea(name: s('name'), placeholder: s('placeholder'));
     default:
       return const SizedBox.shrink();
   }
