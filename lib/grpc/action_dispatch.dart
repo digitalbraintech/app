@@ -34,8 +34,12 @@ gw.SynapseEnvelope? buildActionEnvelope(String name, Map<String, Object?> args) 
             if (!_metaKeys.contains(entry.key)) entry.key: entry.value,
         };
 
+  final stringProps = <String, String>{
+    for (final entry in props.entries) entry.key: entry.value?.toString() ?? '',
+  };
+
   return gw.SynapseEnvelope()
     ..correlationId = (action['actionId'] as String?) ?? synapseType
     ..typeName = synapseType
-    ..payload = utf8.encode(jsonEncode(props));
+    ..payload = utf8.encode(jsonEncode(stringProps));
 }

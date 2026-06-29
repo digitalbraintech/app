@@ -52,4 +52,15 @@ void main() {
   test('non-action event names produce no envelope', () {
     expect(buildActionEnvelope('hover', {'synapseType': 'X'}), isNull);
   });
+
+  test('coerces non-string props to strings before encoding', () {
+    final env = buildActionEnvelope('press', {
+      'synapseType': 'ExperienceStep',
+      'props': {'pack': 'p', 'eventName': 'go', 'agree': true, 'level': 0.5},
+    });
+    final decoded = jsonDecode(utf8.decode(env!.payload)) as Map<String, dynamic>;
+    expect(decoded['agree'], 'true');
+    expect(decoded['level'], '0.5');
+    expect(decoded['pack'], 'p');
+  });
 }
