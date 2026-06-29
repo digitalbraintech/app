@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:digitalbrain_flutter/grpc/action_dispatch.dart';
 import 'package:digitalbrain_flutter/grpc/digitalbrain.pbgrpc.dart';
 import 'package:digitalbrain_flutter/grpc/endpoint.dart';
 import 'package:digitalbrain_flutter/grpc/grpc_channel.dart';
@@ -32,7 +33,9 @@ class ExperienceHostScreen extends StatefulWidget {
 class _ExperienceHostScreenState extends State<ExperienceHostScreen> {
   final RfwRuntimeHost _rfwHost = RfwRuntimeHost();
   dynamic _channel;
+  DigitalBrainGatewayClient? _client;
   StreamSubscription<gw.RfwCardEnvelope>? _feedSub;
+  bool _startFired = false;
 
   Map<String, Object?>? _hopData;
   String? _hopCorrelationId;
@@ -61,6 +64,7 @@ class _ExperienceHostScreenState extends State<ExperienceHostScreen> {
           .listen(_onCard, onError: _onError);
       setState(() {
         _channel = channel;
+        _client = client;
         _feedSub = sub;
         _status = 'Waiting for the experience to start…';
       });
@@ -76,6 +80,10 @@ class _ExperienceHostScreenState extends State<ExperienceHostScreen> {
 
   void _onCard(gw.RfwCardEnvelope envelope) {
     if (!mounted) return;
+    if (!_startFired && widget.target != null) {
+      _startFired = true;
+      _fireStart();
+    }
     final data = _decode(envelope.dataJson);
     if (!experienceHopMatches(data, widget.target)) return;
     setState(() {
@@ -94,8 +102,21 @@ class _ExperienceHostScreenState extends State<ExperienceHostScreen> {
   }
 
   void _onSurfaceEvent(String name, Map<String, Object?> args) {
-    // Card taps are forwarded as-is for future gateway→ExperienceStep mapping; the E2E drives
-    // hops natively via SendExperienceStepAsync, so this is best-effort and not on the test path.
+    final envelope = buildActionEnvelope(name, args);
+    if (envelope == null) return;
+    _client?.send(envelope);
+  }
+
+  void _fireStart() {
+    final pack = widget.pack;
+    final experienceId = widget.experienceId;
+    if (pack == null || experienceId == null) return;
+    final envelope = buildActionEnvelope('press', {
+      'synapseType': 'ExperienceStep',
+      'props': {'pack': pack, 'experienceId': experienceId, 'eventName': 'start'},
+    });
+    if (envelope == null) return;
+    _client?.send(envelope);
   }
 
   @override
