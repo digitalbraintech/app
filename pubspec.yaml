@@ -28,6 +28,7 @@ dependencies:
   rfw: ^1.0.0
   graphic: ^2.7.0
   forui: ^0.21.3
+  forui_assets: ^0.21.0
   # Widget-canvas redesign palette + window manager (docs/redesign).
   # Panel chrome is hand-rolled (generic Dart shell, 01-ARCHITECTURE Decision 3)
   # rather than a low-trust floating-panel package; persistence via prefs.

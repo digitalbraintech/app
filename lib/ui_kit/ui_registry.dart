@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:rfw/rfw.dart' show RemoteEventHandler;
 
+import 'ui_avatar.dart';
+import 'ui_badge.dart';
 import 'ui_button.dart';
 import 'ui_checkbox.dart';
 import 'ui_column.dart';
@@ -8,6 +10,8 @@ import 'ui_date_field.dart';
 import 'ui_divider.dart';
 import 'ui_gap.dart';
 import 'ui_header.dart';
+import 'ui_heading.dart';
+import 'ui_icon.dart';
 import 'ui_panel.dart';
 import 'ui_radio_group.dart';
 import 'ui_row.dart';
@@ -77,6 +81,14 @@ Widget buildUiNode(
       return UiKitHeader(title: s('title'));
     case 'ui:gap':
       return UiKitGap(size: d('size') == 0 ? 16 : d('size'));
+    case 'ui:heading':
+      return UiKitHeading(text: s('text'));
+    case 'ui:icon':
+      return UiKitIcon(name: s('name'));
+    case 'ui:avatar':
+      return UiKitAvatar(imageUrl: s('imageUrl'), fallback: s('fallback'));
+    case 'ui:badge':
+      return UiKitBadge(text: s('text'));
     default:
       return const SizedBox.shrink();
   }
