@@ -40,18 +40,20 @@ void main() {
   });
 
   group('UiKitScreen', () {
-    testWidgets('wraps child in UiKitFormScope', (tester) async {
+    testWidgets('wraps children in UiKitFormScope and lays them out', (tester) async {
       UiKitFormController? capturedController;
 
       await tester.pumpWidget(
         _wrap(
           UiKitScreen(
-            child: Builder(
-              builder: (ctx) {
-                capturedController = UiKitFormScope.of(ctx);
-                return const SizedBox.shrink();
-              },
-            ),
+            children: [
+              Builder(
+                builder: (ctx) {
+                  capturedController = UiKitFormScope.of(ctx);
+                  return const SizedBox.shrink();
+                },
+              ),
+            ],
           ),
         ),
       );
@@ -68,7 +70,7 @@ void main() {
   });
 
   group('UiKitTextField', () {
-    testWidgets('writes typed value into scope', (tester) async {
+    testWidgets('writes typed value into scope via FTextField', (tester) async {
       final controller = UiKitFormController();
 
       await tester.pumpWidget(
@@ -80,14 +82,14 @@ void main() {
           home: Scaffold(
             body: UiKitFormScope(
               controller: controller,
-              child: const UiKitTextField(name: 'email', hint: 'you@example.com'),
+              child: const UiKitTextField(name: 'email', placeholder: 'you@example.com'),
             ),
           ),
         ),
       );
 
-      await tester.enterText(find.byType(EditableText), 'test@example.com');
-      await tester.pump();
+      await tester.enterText(find.byType(FTextField), 'test@example.com');
+      await tester.pumpAndSettle();
 
       expect(controller.values['email'], 'test@example.com');
       controller.dispose();
@@ -156,17 +158,48 @@ void main() {
     });
   });
 
-  group('UiKitPanel', () {
-    testWidgets('renders title and child', (tester) async {
+  group('UiKitScreen + FTextField + Button integration', () {
+    testWidgets('Button emits captured field value', (tester) async {
+      Map<String, Object?>? captured;
+
       await tester.pumpWidget(
         _wrap(
-          const UiKitPanel(
-            title: 'My Panel',
-            child: Text('panel content'),
+          UiKitScreen(
+            children: [
+              const UiKitTextField(name: 'name'),
+              UiKitButton(
+                label: 'Greet',
+                pack: 'hello-world',
+                experienceId: 'hello-world',
+                eventName: 'greeting',
+                onEvent: (n, a) => captured = a,
+              ),
+            ],
           ),
         ),
       );
-      expect(find.text('My Panel'), findsOneWidget);
+
+      await tester.enterText(find.byType(FTextField), 'Alice');
+      await tester.tap(find.text('Greet'));
+      await tester.pumpAndSettle();
+
+      final props = captured!['props'] as Map<String, Object?>;
+      expect(captured!['synapseType'], 'ExperienceStep');
+      expect(props['pack'], 'hello-world');
+      expect(props['eventName'], 'greeting');
+      expect(props['name'], 'Alice');
+    });
+  });
+
+  group('UiKitPanel', () {
+    testWidgets('renders children', (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          const UiKitPanel(
+            children: [Text('panel content')],
+          ),
+        ),
+      );
       expect(find.text('panel content'), findsOneWidget);
     });
   });

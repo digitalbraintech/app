@@ -1,52 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 
 import 'ui_form_scope.dart';
 
-// Renders a text field that writes its value into [UiKitFormScope] on every
-// keystroke.  Uses a plain [TextField] (not ForUI) so we can attach a
-// [TextEditingController] listener directly.
 class UiKitTextField extends StatefulWidget {
+  const UiKitTextField({super.key, required this.name, this.placeholder = ''});
   final String name;
-  final String? hint;
-  final String? label;
-
-  const UiKitTextField({
-    required this.name,
-    this.hint,
-    this.label,
-    super.key,
-  });
+  final String placeholder;
 
   @override
   State<UiKitTextField> createState() => _UiKitTextFieldState();
 }
 
 class _UiKitTextFieldState extends State<UiKitTextField> {
-  final TextEditingController _controller = TextEditingController();
+  TextEditingValue _value = TextEditingValue.empty;
 
-  @override
-  void initState() {
-    super.initState();
-    _controller.addListener(_onTextChanged);
-  }
-
-  void _onTextChanged() {
-    UiKitFormScope.of(context)?.set(widget.name, _controller.text);
+  void _onChange(TextEditingValue v) {
+    setState(() => _value = v);
+    UiKitFormScope.of(context)?.set(widget.name, v.text);
   }
 
   @override
-  void dispose() {
-    _controller.removeListener(_onTextChanged);
-    _controller.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    return FTextField(
+      control: FTextFieldControl.lifted(value: _value, onChange: _onChange),
+      hint: widget.placeholder,
+    );
   }
-
-  @override
-  Widget build(BuildContext context) => TextField(
-    controller: _controller,
-    decoration: InputDecoration(
-      labelText: widget.label,
-      hintText: widget.hint,
-    ),
-  );
 }

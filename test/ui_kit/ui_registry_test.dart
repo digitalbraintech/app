@@ -21,9 +21,9 @@ Widget _noop(Map<String, Object?> _) => const SizedBox.shrink();
 
 void main() {
   group('buildUiNode', () {
-    test('returns null for unknown type', () {
-      final result = buildUiNode('unknown:widget', {}, [], (_, _) {}, buildChild: _noop);
-      expect(result, isNull);
+    test('returns SizedBox.shrink for unknown type', () {
+      final result = buildUiNode('unknown:widget', {}, [], (n, a) {}, buildChild: _noop);
+      expect(result, isA<SizedBox>());
     });
 
     test('maps ui:text to UiKitText', () {
@@ -62,7 +62,7 @@ void main() {
     test('maps ui:panel to UiKitPanel', () {
       final node = buildUiNode(
         'ui:panel',
-        {'title': 'T'},
+        {},
         [],
         (_, _) {},
         buildChild: _noop,
@@ -99,7 +99,7 @@ void main() {
         [],
         (_, _) {},
         buildChild: _noop,
-      )!;
+      );
 
       await tester.pumpWidget(_wrap(node));
       expect(find.text('Registry text'), findsOneWidget);
@@ -119,7 +119,7 @@ void main() {
         [],
         (name, args) => capturedArgs = args,
         buildChild: _noop,
-      )!;
+      );
 
       await tester.pumpWidget(_wrap(node));
       await tester.tap(find.text('Press me'));
