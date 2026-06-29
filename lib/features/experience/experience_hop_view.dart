@@ -24,6 +24,19 @@ class ExperienceHopView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tree = data['tree'];
+    if (tree is Map) {
+      return Semantics(
+        identifier: correlationId,
+        container: true,
+        child: UiSurfaceTreeRenderer().build(
+          tree.cast<String, Object?>(),
+          onEvent,
+          rfwHost: host,
+        ),
+      );
+    }
+
     final body = buildInlineRfwSurface(
       host: host,
       data: data,
