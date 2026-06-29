@@ -3,8 +3,12 @@ import 'package:rfw/rfw.dart' show RemoteEventHandler;
 
 import 'ui_button.dart';
 import 'ui_checkbox.dart';
+import 'ui_date_field.dart';
 import 'ui_panel.dart';
+import 'ui_radio_group.dart';
 import 'ui_screen.dart';
+import 'ui_select.dart';
+import 'ui_slider.dart';
 import 'ui_switch.dart';
 import 'ui_text.dart';
 import 'ui_text_area.dart';
@@ -23,6 +27,9 @@ Widget buildUiNode(
   List<Widget> kids() =>
       childrenList.cast<Map<String, Object?>>().map(buildChild).toList();
   String s(String key) => (props[key] ?? '').toString();
+  List<String> optList(String key) =>
+      (props[key] as List?)?.map((e) => e.toString()).toList() ?? const [];
+  double d(String key) => (props[key] as num?)?.toDouble() ?? 0;
 
   switch (type.toLowerCase()) {
     case 'ui:screen':
@@ -47,6 +54,14 @@ Widget buildUiNode(
       return UiKitSwitch(name: s('name'), label: s('label'));
     case 'ui:textarea':
       return UiKitTextArea(name: s('name'), placeholder: s('placeholder'));
+    case 'ui:select':
+      return UiKitSelect(name: s('name'), options: optList('options'), label: s('label'));
+    case 'ui:radiogroup':
+      return UiKitRadioGroup(name: s('name'), options: optList('options'), label: s('label'));
+    case 'ui:slider':
+      return UiKitSlider(name: s('name'), min: d('min'), max: d('max'), label: s('label'));
+    case 'ui:datefield':
+      return UiKitDateField(name: s('name'), label: s('label'));
     default:
       return const SizedBox.shrink();
   }
