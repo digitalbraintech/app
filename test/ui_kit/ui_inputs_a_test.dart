@@ -11,7 +11,7 @@ Widget _host(Widget child) => MaterialApp(
     );
 
 void main() {
-  testWidgets('Checkbox writes "true"/"false" into form scope', (tester) async {
+  testWidgets('Checkbox writes "true" when checked', (tester) async {
     final c = UiKitFormController();
     await tester.pumpWidget(_host(UiKitFormScope(
       controller: c,
