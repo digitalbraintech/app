@@ -1,9 +1,12 @@
 import 'package:flutter/widgets.dart';
+import 'package:forui/forui.dart' show FTile;
 import 'package:rfw/rfw.dart' show RemoteEventHandler;
 
 import 'ui_avatar.dart';
 import 'ui_badge.dart';
 import 'ui_button.dart';
+import 'ui_list.dart';
+import 'ui_tile.dart';
 import 'ui_checkbox.dart';
 import 'ui_column.dart';
 import 'ui_date_field.dart';
@@ -35,6 +38,25 @@ Widget buildUiNode(
 }) {
   List<Widget> kids() =>
       childrenList.cast<Map<String, Object?>>().map(buildChild).toList();
+  // Builds FTile instances directly from child node maps for use in FTileGroup (which requires FTileMixin children).
+  List<FTile> tilekids() => childrenList.cast<Map<String, Object?>>().map((child) {
+        final cp = (child['props'] as Map<String, Object?>?) ?? const {};
+        String cs(String key) => (cp[key] ?? '').toString();
+        return FTile(
+          title: Text(cs('title')),
+          subtitle: cs('subtitle').isEmpty ? null : Text(cs('subtitle')),
+          onPress: cs('eventName').isEmpty
+              ? null
+              : () => onEvent('press', {
+                    'synapseType': 'ExperienceStep',
+                    'props': {
+                      'pack': cs('pack'),
+                      'experienceId': cs('experienceId'),
+                      'eventName': cs('eventName'),
+                    },
+                  }),
+        );
+      }).toList();
   String s(String key) => (props[key] ?? '').toString();
   List<String> optList(String key) =>
       (props[key] as List?)?.map((e) => e.toString()).toList() ?? const [];
@@ -89,6 +111,14 @@ Widget buildUiNode(
       return UiKitAvatar(imageUrl: s('imageUrl'), fallback: s('fallback'));
     case 'ui:badge':
       return UiKitBadge(text: s('text'));
+    case 'ui:tile':
+      return UiKitTile(
+        title: s('title'), subtitle: s('subtitle'),
+        pack: s('pack'), experienceId: s('experienceId'), eventName: s('eventName'),
+        onEvent: onEvent,
+      );
+    case 'ui:list':
+      return UiKitList(children: tilekids());
     default:
       return const SizedBox.shrink();
   }
