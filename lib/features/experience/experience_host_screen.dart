@@ -103,20 +103,31 @@ class _ExperienceHostScreenState extends State<ExperienceHostScreen> {
 
   void _onSurfaceEvent(String name, Map<String, Object?> args) {
     final envelope = buildActionEnvelope(name, args);
-    if (envelope == null) return;
-    _client?.send(envelope);
+    final client = _client;
+    if (envelope == null || client == null) return;
+    client.send(envelope).then(
+      (_) {},
+      onError: (Object error) => _onError(error, StackTrace.current),
+    );
   }
 
   void _fireStart() {
     final pack = widget.pack;
     final experienceId = widget.experienceId;
-    if (pack == null || experienceId == null) return;
-    final envelope = buildActionEnvelope('press', {
-      'synapseType': 'ExperienceStep',
-      'props': {'pack': pack, 'experienceId': experienceId, 'eventName': 'start'},
-    });
-    if (envelope == null) return;
-    _client?.send(envelope);
+    final client = _client;
+    if (pack == null || experienceId == null || client == null) return;
+    final envelope = gw.SynapseEnvelope()
+      ..correlationId = 'start-$pack'
+      ..typeName = 'ExperienceStep'
+      ..payload = utf8.encode(jsonEncode({
+        'pack': pack,
+        'experienceId': experienceId,
+        'eventName': 'start',
+      }));
+    client.send(envelope).then(
+      (_) {},
+      onError: (Object error) => _onError(error, StackTrace.current),
+    );
   }
 
   @override
