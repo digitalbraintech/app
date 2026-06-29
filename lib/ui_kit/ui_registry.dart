@@ -3,9 +3,14 @@ import 'package:rfw/rfw.dart' show RemoteEventHandler;
 
 import 'ui_button.dart';
 import 'ui_checkbox.dart';
+import 'ui_column.dart';
 import 'ui_date_field.dart';
+import 'ui_divider.dart';
+import 'ui_gap.dart';
+import 'ui_header.dart';
 import 'ui_panel.dart';
 import 'ui_radio_group.dart';
+import 'ui_row.dart';
 import 'ui_screen.dart';
 import 'ui_select.dart';
 import 'ui_slider.dart';
@@ -62,6 +67,16 @@ Widget buildUiNode(
       return UiKitSlider(name: s('name'), min: d('min'), max: d('max'), label: s('label'));
     case 'ui:datefield':
       return UiKitDateField(name: s('name'), label: s('label'));
+    case 'ui:row':
+      return UiKitRow(children: kids());
+    case 'ui:column':
+      return UiKitColumn(children: kids());
+    case 'ui:divider':
+      return const UiKitDivider();
+    case 'ui:header':
+      return UiKitHeader(title: s('title'));
+    case 'ui:gap':
+      return UiKitGap(size: d('size') == 0 ? 16 : d('size'));
     default:
       return const SizedBox.shrink();
   }
