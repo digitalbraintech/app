@@ -56,11 +56,13 @@ void main() {
   test('coerces non-string props to strings before encoding', () {
     final env = buildActionEnvelope('press', {
       'synapseType': 'ExperienceStep',
-      'props': {'pack': 'p', 'eventName': 'go', 'agree': true, 'level': 0.5},
+      'props': {'pack': 'p', 'eventName': 'go', 'agree': true, 'level': 0.5, 'missing': null},
     });
     final decoded = jsonDecode(utf8.decode(env!.payload)) as Map<String, dynamic>;
     expect(decoded['agree'], 'true');
     expect(decoded['level'], '0.5');
     expect(decoded['pack'], 'p');
+    expect(decoded['eventName'], 'go');
+    expect(decoded['missing'], '');
   });
 }
