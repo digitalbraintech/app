@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:rfw/rfw.dart' show RemoteEventHandler;
 
+import 'ui_alert.dart';
 import 'ui_avatar.dart';
 import 'ui_badge.dart';
 import 'ui_button.dart';
@@ -14,16 +15,19 @@ import 'ui_heading.dart';
 import 'ui_icon.dart';
 import 'ui_list.dart';
 import 'ui_panel.dart';
+import 'ui_progress.dart';
 import 'ui_radio_group.dart';
 import 'ui_row.dart';
 import 'ui_screen.dart';
 import 'ui_select.dart';
 import 'ui_slider.dart';
+import 'ui_spinner.dart';
 import 'ui_switch.dart';
 import 'ui_text.dart';
 import 'ui_text_area.dart';
 import 'ui_text_field.dart';
 import 'ui_tile.dart';
+import 'ui_tooltip.dart';
 
 // Maps a ui:* node (type already lower-cased by the tree renderer) to its ForUI cover widget.
 // [buildChild] recurses back into the tree renderer for container children (ui:Screen, ui:Panel).
@@ -102,6 +106,15 @@ Widget buildUiNode(
         tileDescriptors: childrenList.cast<Map<String, Object?>>().toList(),
         onEvent: onEvent,
       );
+    case 'ui:alert':
+      return UiKitAlert(title: s('title'), subtitle: s('subtitle'));
+    case 'ui:progress':
+      return UiKitProgress(value: d('value'));
+    case 'ui:spinner':
+      return const UiKitSpinner();
+    case 'ui:tooltip':
+      final tipKids = kids();
+      return UiKitTooltip(tip: s('tip'), child: tipKids.isEmpty ? const SizedBox.shrink() : tipKids.first);
     default:
       return const SizedBox.shrink();
   }
