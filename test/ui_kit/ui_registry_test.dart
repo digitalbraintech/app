@@ -8,6 +8,7 @@ import 'package:digitalbrain_flutter/ui_kit/ui_button.dart';
 import 'package:digitalbrain_flutter/ui_kit/ui_panel.dart';
 import 'package:digitalbrain_flutter/ui_kit/ui_screen.dart';
 import 'package:digitalbrain_flutter/ui_kit/ui_text_field.dart';
+import 'package:digitalbrain_flutter/rfw_host/rfw_runtime_host.dart';
 
 Widget _wrap(Widget child) => MaterialApp(
   builder: (_, w) => FTheme(
@@ -103,6 +104,27 @@ void main() {
 
       await tester.pumpWidget(_wrap(node));
       expect(find.text('Registry text'), findsOneWidget);
+    });
+
+    testWidgets('UiSurfaceTreeRenderer routes ui:Screen+ui:Text through buildUiNode', (tester) async {
+      final tree = <String, Object?>{
+        'Type': 'ui:Screen',
+        'Props': <String, Object?>{},
+        'Children': [
+          <String, Object?>{
+            'Type': 'ui:Text',
+            'Props': <String, Object?>{'text': 'Hello from ui:Text'},
+            'Children': <Object?>[],
+          },
+        ],
+      };
+
+      final renderer = UiSurfaceTreeRenderer();
+      final rfwHost = RfwRuntimeHost();
+      final widget = renderer.build(tree, (_, _) {}, rfwHost: rfwHost);
+
+      await tester.pumpWidget(_wrap(widget));
+      expect(find.text('Hello from ui:Text'), findsOneWidget);
     });
 
     testWidgets('ui:button fires event with correct payload', (tester) async {

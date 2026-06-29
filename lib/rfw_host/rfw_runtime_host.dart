@@ -4,6 +4,7 @@ import 'package:rfw/formats.dart' show parseLibraryFile;
 import 'package:rfw/rfw.dart';
 
 import 'package:digitalbrain_flutter/rfw_host/digitalbrain_rfw_library.dart';
+import 'package:digitalbrain_flutter/ui_kit/ui_registry.dart';
 
 /// One process-wide RFW runtime: the host-owned `digitalbrain` dictionary plus
 /// per-key parsed document libraries. Parse failures are captured per key so a
@@ -88,6 +89,24 @@ class UiSurfaceTreeRenderer {
             as Map<String, Object?>;
     final childrenList =
         (node['Children'] ?? node['children'] ?? const []) as List;
+
+    // ui:* nodes are delegated to the typed UI-kit registry (Task 5). The buildChild closure
+    // recurses back into build(...) so containers (ui:Screen, ui:Panel) can render their children.
+    if (type.startsWith('ui:')) {
+      return buildUiNode(
+        type,
+        props,
+        childrenList,
+        onEvent,
+        buildChild: (childNode) => build(
+          childNode,
+          onEvent,
+          rfwHost: rfwHost,
+          onNavSelected: onNavSelected,
+          activeTarget: activeTarget,
+        ),
+      );
+    }
 
     // Neuron UI Kit (server-driven only; client is thin renderer). Match exact kit types (from NeuronUiKit in Core).
     const kitMenu = 'neuron:menu';
