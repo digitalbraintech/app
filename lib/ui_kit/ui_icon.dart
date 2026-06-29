@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:forui_assets/forui_assets.dart';
+import 'package:forui/forui.dart';
 
 class UiKitIcon extends StatelessWidget {
   const UiKitIcon({super.key, required this.name});
@@ -10,7 +10,6 @@ class UiKitIcon extends StatelessWidget {
   static const Map<String, IconData> _icons = {
     'star': FIcons.star,
     'check': FIcons.check,
-    'circle': FIcons.circle,
     'list': FIcons.list,
     'search': FIcons.search,
     'user': FIcons.userRound,
