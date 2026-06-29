@@ -4,6 +4,7 @@ import 'package:rfw/rfw.dart' show RemoteEventHandler;
 import 'ui_alert.dart';
 import 'ui_avatar.dart';
 import 'ui_badge.dart';
+import 'ui_breadcrumb.dart';
 import 'ui_button.dart';
 import 'ui_checkbox.dart';
 import 'ui_column.dart';
@@ -14,6 +15,7 @@ import 'ui_header.dart';
 import 'ui_heading.dart';
 import 'ui_icon.dart';
 import 'ui_list.dart';
+import 'ui_pagination.dart';
 import 'ui_panel.dart';
 import 'ui_progress.dart';
 import 'ui_radio_group.dart';
@@ -23,6 +25,7 @@ import 'ui_select.dart';
 import 'ui_slider.dart';
 import 'ui_spinner.dart';
 import 'ui_switch.dart';
+import 'ui_tabs.dart';
 import 'ui_text.dart';
 import 'ui_text_area.dart';
 import 'ui_text_field.dart';
@@ -45,6 +48,7 @@ Widget buildUiNode(
   List<String> optList(String key) =>
       (props[key] as List?)?.map((e) => e.toString()).toList() ?? const [];
   double d(String key) => (props[key] as num?)?.toDouble() ?? 0;
+  List itemList() => (props['items'] as List?) ?? const [];
 
   switch (type.toLowerCase()) {
     case 'ui:screen':
@@ -106,6 +110,12 @@ Widget buildUiNode(
         tileDescriptors: childrenList.cast<Map<String, Object?>>().toList(),
         onEvent: onEvent,
       );
+    case 'ui:tabs':
+      return UiKitTabs(items: itemList(), pack: s('pack'), experienceId: s('experienceId'), onEvent: onEvent);
+    case 'ui:breadcrumb':
+      return UiKitBreadcrumb(items: itemList(), pack: s('pack'), experienceId: s('experienceId'), onEvent: onEvent);
+    case 'ui:pagination':
+      return UiKitPagination(items: itemList(), pack: s('pack'), experienceId: s('experienceId'), onEvent: onEvent);
     case 'ui:alert':
       return UiKitAlert(title: s('title'), subtitle: s('subtitle'));
     case 'ui:progress':
