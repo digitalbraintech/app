@@ -1,12 +1,9 @@
 import 'package:flutter/widgets.dart';
-import 'package:forui/forui.dart' show FTile;
 import 'package:rfw/rfw.dart' show RemoteEventHandler;
 
 import 'ui_avatar.dart';
 import 'ui_badge.dart';
 import 'ui_button.dart';
-import 'ui_list.dart';
-import 'ui_tile.dart';
 import 'ui_checkbox.dart';
 import 'ui_column.dart';
 import 'ui_date_field.dart';
@@ -15,6 +12,7 @@ import 'ui_gap.dart';
 import 'ui_header.dart';
 import 'ui_heading.dart';
 import 'ui_icon.dart';
+import 'ui_list.dart';
 import 'ui_panel.dart';
 import 'ui_radio_group.dart';
 import 'ui_row.dart';
@@ -25,6 +23,7 @@ import 'ui_switch.dart';
 import 'ui_text.dart';
 import 'ui_text_area.dart';
 import 'ui_text_field.dart';
+import 'ui_tile.dart';
 
 // Maps a ui:* node (type already lower-cased by the tree renderer) to its ForUI cover widget.
 // [buildChild] recurses back into the tree renderer for container children (ui:Screen, ui:Panel).
@@ -38,25 +37,6 @@ Widget buildUiNode(
 }) {
   List<Widget> kids() =>
       childrenList.cast<Map<String, Object?>>().map(buildChild).toList();
-  // Builds FTile instances directly from child node maps for use in FTileGroup (which requires FTileMixin children).
-  List<FTile> tilekids() => childrenList.cast<Map<String, Object?>>().map((child) {
-        final cp = (child['props'] as Map<String, Object?>?) ?? const {};
-        String cs(String key) => (cp[key] ?? '').toString();
-        return FTile(
-          title: Text(cs('title')),
-          subtitle: cs('subtitle').isEmpty ? null : Text(cs('subtitle')),
-          onPress: cs('eventName').isEmpty
-              ? null
-              : () => onEvent('press', {
-                    'synapseType': 'ExperienceStep',
-                    'props': {
-                      'pack': cs('pack'),
-                      'experienceId': cs('experienceId'),
-                      'eventName': cs('eventName'),
-                    },
-                  }),
-        );
-      }).toList();
   String s(String key) => (props[key] ?? '').toString();
   List<String> optList(String key) =>
       (props[key] as List?)?.map((e) => e.toString()).toList() ?? const [];
@@ -118,7 +98,10 @@ Widget buildUiNode(
         onEvent: onEvent,
       );
     case 'ui:list':
-      return UiKitList(children: tilekids());
+      return UiKitList(
+        tileDescriptors: childrenList.cast<Map<String, Object?>>().toList(),
+        onEvent: onEvent,
+      );
     default:
       return const SizedBox.shrink();
   }

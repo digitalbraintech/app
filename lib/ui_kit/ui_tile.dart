@@ -3,6 +3,30 @@ import 'package:forui/forui.dart';
 import 'package:rfw/rfw.dart' show RemoteEventHandler;
 import 'ui_form_scope.dart';
 
+FTile buildExperienceFTile({
+  required String title,
+  required String subtitle,
+  required String pack,
+  required String experienceId,
+  required String eventName,
+  required RemoteEventHandler onEvent,
+  Map<String, String> capturedValues = const {},
+}) => FTile(
+      title: Text(title),
+      subtitle: subtitle.isEmpty ? null : Text(subtitle),
+      onPress: eventName.isEmpty
+          ? null
+          : () => onEvent('press', {
+                'synapseType': 'ExperienceStep',
+                'props': {
+                  'pack': pack,
+                  'experienceId': experienceId,
+                  'eventName': eventName,
+                  ...capturedValues,
+                },
+              }),
+    );
+
 class UiKitTile extends StatelessWidget {
   const UiKitTile({
     super.key,
@@ -20,25 +44,23 @@ class UiKitTile extends StatelessWidget {
   final String eventName;
   final RemoteEventHandler? onEvent;
 
-  FTile _tile(UiKitFormController? controller) => FTile(
-        title: Text(title),
-        subtitle: subtitle.isEmpty ? null : Text(subtitle),
-        onPress: eventName.isEmpty || onEvent == null
-            ? null
-            : () => onEvent!('press', {
-                  'synapseType': 'ExperienceStep',
-                  'props': {
-                    'pack': pack,
-                    'experienceId': experienceId,
-                    'eventName': eventName,
-                    ...(controller?.values ?? const {}),
-                  },
-                }),
-      );
-
   @override
   Widget build(BuildContext context) {
+    final tile = onEvent == null
+        ? FTile(
+            title: Text(title),
+            subtitle: subtitle.isEmpty ? null : Text(subtitle),
+          )
+        : buildExperienceFTile(
+            title: title,
+            subtitle: subtitle,
+            pack: pack,
+            experienceId: experienceId,
+            eventName: eventName,
+            onEvent: onEvent!,
+            capturedValues: UiKitFormScope.of(context)?.values ?? const {},
+          );
     // FTile requires a group context for layout constraints; wrap standalone tiles in FTileGroup.
-    return FTileGroup(children: [_tile(UiKitFormScope.of(context))]);
+    return FTileGroup(children: [tile]);
   }
 }
