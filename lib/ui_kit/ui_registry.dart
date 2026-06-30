@@ -70,6 +70,10 @@ Widget buildUiNode(
         pack: s('pack'),
         experienceId: s('experienceId'),
         eventName: s('eventName'),
+        // synapseType lets config-form buttons emit ConfigurationProvided instead of the default ExperienceStep.
+        synapseType: props['synapseType']?.toString().isNotEmpty == true
+            ? props['synapseType']!.toString()
+            : 'ExperienceStep',
         onEvent: onEvent,
       );
     case 'ui:checkbox':
@@ -79,7 +83,9 @@ Widget buildUiNode(
     case 'ui:textarea':
       return UiKitTextArea(name: s('name'), placeholder: s('placeholder'));
     case 'ui:select':
-      return UiKitSelect(name: s('name'), options: optList('options'), label: s('label'));
+      // Backend emits 'items'; older surfaces may use 'options'. Prefer 'items'.
+      final selectOptions = optList('items').isNotEmpty ? optList('items') : optList('options');
+      return UiKitSelect(name: s('name'), options: selectOptions, label: s('label'));
     case 'ui:radiogroup':
       return UiKitRadioGroup(name: s('name'), options: optList('options'), label: s('label'));
     case 'ui:slider':
