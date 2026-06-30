@@ -63,7 +63,11 @@ Widget buildUiNode(
     case 'ui:text':
       return UiKitText(text: s('text'));
     case 'ui:textfield':
-      return UiKitTextField(name: s('name'), placeholder: s('placeholder'));
+      return UiKitTextField(
+        name: s('name'),
+        placeholder: s('placeholder'),
+        secret: props['secret'] == true,
+      );
     case 'ui:button':
       return UiKitButton(
         label: s('label'),

@@ -107,10 +107,7 @@ void main() {
 
     testWidgets('submit dispatches ConfigurationProvided envelope with field values', (tester) async {
       String? capturedEventName;
-      Map<Object?, Object?>? capturedArgs;
-
-      final tokenController = TextEditingController();
-      final keyController = TextEditingController();
+      Map<String, Object?>? capturedArgs;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -140,6 +137,14 @@ void main() {
       // FSelect renders a readonly FTextField as its trigger (index 1).
       // The two editable text fields are at index 0 (token) and index 2 (key).
       final textFields = find.byType(FTextField);
+
+      // Secret fields must obscure their text — EditableText carries the obscureText flag.
+      final obscuredEditable = find.byWidgetPredicate(
+        (w) => w is EditableText && w.obscureText,
+      );
+      // Both secret fields (token + key) should be obscured.
+      expect(obscuredEditable, findsNWidgets(2));
+
       await tester.enterText(textFields.at(0), 'my-token');
       await tester.pump();
 
@@ -159,7 +164,7 @@ void main() {
       expect(args['synapseType'], equals('ConfigurationProvided'));
 
       // Field values are in 'props'.
-      final props = args['props'] as Map<Object?, Object?>;
+      final props = args['props'] as Map<String, Object?>;
       expect(props['pack'], equals(packName));
       expect(props['telegram_token'], equals('my-token'));
       expect(props['llm_key'], equals('sk-secret'));
