@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// DigitalBrain visual language — editorial-cinematic dark.
@@ -187,39 +188,9 @@ ThemeData buildDigitalBrainTheme() {
         fontWeight: FontWeight.w500,
         letterSpacing: -0.4,
       ),
-      titleLarge: interText.titleLarge?.copyWith(
-        color: DigitalBrainColors.ink,
-        fontWeight: FontWeight.w500,
-        letterSpacing: -0.2,
-      ),
-      bodyLarge: interText.bodyLarge?.copyWith(
-        color: DigitalBrainColors.inkMid,
-        height: 1.7,
-        fontWeight: FontWeight.w400,
-      ),
-      bodyMedium: interText.bodyMedium?.copyWith(
-        color: DigitalBrainColors.inkMid,
-        height: 1.65,
-      ),
-      labelLarge: interText.labelLarge?.copyWith(
-        color: DigitalBrainColors.ink,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.1,
-      ),
     ),
-    appBarTheme: AppBarTheme(
-      backgroundColor: DigitalBrainColors.bg0.withValues(alpha: 0.85),
-      foregroundColor: DigitalBrainColors.ink,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      surfaceTintColor: Colors.transparent,
-      centerTitle: false,
-      titleTextStyle: GoogleFonts.inter(
-        fontSize: 18,
-        fontWeight: FontWeight.w500,
-        color: DigitalBrainColors.ink,
-        letterSpacing: -0.3,
-      ),
+  );
+}
     ),
     iconTheme: const IconThemeData(color: DigitalBrainColors.inkMid, size: 20),
     dividerTheme: const DividerThemeData(

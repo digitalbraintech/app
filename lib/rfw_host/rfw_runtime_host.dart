@@ -90,8 +90,7 @@ class UiSurfaceTreeRenderer {
     final childrenList =
         (node['Children'] ?? node['children'] ?? const []) as List;
 
-    // ui:* nodes are delegated to the typed UI-kit registry (Task 5). The buildChild closure
-    // recurses back into build(...) so containers (ui:Screen, ui:Panel) can render their children.
+    // ui:* nodes delegated to registry (buildChild recurses for containers).
     if (type.startsWith('ui:')) {
       return buildUiNode(
         type,
@@ -108,111 +107,65 @@ class UiSurfaceTreeRenderer {
       );
     }
 
-    // Neuron UI Kit (server-driven only; client is thin renderer). Match exact kit types (from NeuronUiKit in Core).
-    const kitMenu = 'neuron:menu';
-    const kitMenuItem = 'neuron:menuitem';
-    const kitActionBtn = 'neuron:actionbutton';
-    const kitNeuronBtn = 'neuron:neuronbutton';
-    if (type == kitMenu || type == 'neuron:sidebar') {
-      return _buildNeuronMenu(
-        props,
-        childrenList,
-        onEvent,
-        rfwHost,
-        onNavSelected,
-        activeTarget,
-      );
-    }
-    if (type == kitMenuItem || type == 'neuron:menu-item') {
-      return _buildNeuronMenuItem(props, onEvent, onNavSelected, activeTarget);
-    }
-    if (type == kitActionBtn ||
-        type == kitNeuronBtn ||
-        type == 'neuron:button') {
-      final label = (props['label'] ?? props['text'] ?? '').toString();
-      return FButton(
-        onPress: () {
-          onEvent('press', {'label': label, ...props});
-          final t = (props['targetSurfaceKind'] ?? props['target'])?.toString();
-          if (t != null && t.isNotEmpty) onNavSelected?.call(t);
-        },
-        child: Text(label),
-      );
-    }
-
-    if (type == 'neuron:header' || type == 'header') {
-      final t = (props['title'] ?? props['text'] ?? props['label'] ?? '')
-          .toString();
-      return FHeader(title: Text(t));
-    }
-
-    if (type == 'neuron:divider' || type == 'divider') {
-      return const FDivider();
-    }
-
-    // ForUI scaffold and autocomplete from NeuronUiKit (shell neuron trees, marketplace buddy search etc).
-    if (type == 'forui:fscaffold' ||
-        type == 'forui:scaffold' ||
-        type == 'scaffold') {
-      return _buildForuiScaffold(
-        props,
-        childrenList,
-        onEvent,
-        rfwHost,
-        onNavSelected,
-        activeTarget,
-      );
-    }
-    if (type == 'forui:fautocomplete' ||
-        type == 'forui:autocomplete' ||
-        type.contains('autocomplete')) {
-      return _buildForuiAutocomplete(props, onEvent);
-    }
-
-    if (type == 'forui:ftextfield' ||
-        type == 'forui:textfield' ||
-        type.contains('textfield')) {
-      final label = (props['label'] ?? props['hint'] ?? '').toString();
-      final hint = (props['hint'] ?? props['placeholder'] ?? label).toString();
-      return FTextField(label: Text(label), hint: hint);
-    }
-
-    if (type == 'neuron:form' || type == 'form' || type == 'forui:fform') {
-      return _NeuronForm(props: props, onEvent: onEvent);
-    }
-
-    if (type == 'forui:fselect' ||
-        type == 'forui:select' ||
-        type.contains('select')) {
-      final itemsRaw = props['items'] ?? const <Object>[];
-      final items = itemsRaw is List
-          ? itemsRaw.map((e) => e.toString()).toList()
-          : <String>[];
-      final label = (props['label'] ?? 'Select').toString();
-      return FSelect(label: Text(label), items: {for (final i in items) i: i});
-    }
-
-    if (type == 'forui:fbutton' || type == 'forui:button' || type == 'button') {
-      final label = (props['label'] ?? props['text'] ?? '').toString();
-      final variantStr = (props['variant'] ?? 'primary')
-          .toString()
-          .toLowerCase();
-      var variant = FButtonVariant.primary;
-      if (variantStr.contains('outline')) {
-        variant = FButtonVariant.outline;
-      }
-      if (variantStr.contains('destructive')) {
-        variant = FButtonVariant.destructive;
-      }
-      return FButton(
-        variant: variant,
-        onPress: () {
-          onEvent('press', {'label': label, ...props});
-          final t = (props['targetSurfaceKind'] ?? props['target'])?.toString();
-          if (t != null && t.isNotEmpty) onNavSelected?.call(t);
-        },
-        child: Text(label),
-      );
+    // Simplified dispatch using switch on canonical (lowercased) kit names from Core.
+    // Aliases and heuristics removed in prior step. One place per type.
+    switch (type) {
+      case 'neuron:menu':
+        return _buildNeuronMenu(props, childrenList, onEvent, rfwHost, onNavSelected, activeTarget);
+      case 'neuron:menuitem':
+        return _buildNeuronMenuItem(props, onEvent, onNavSelected, activeTarget);
+      case 'neuron:actionbutton':
+      case 'neuron:neuronbutton':
+        final label = (props['label'] ?? props['text'] ?? '').toString();
+        return FButton(
+          onPress: () {
+            onEvent('press', {'label': label, ...props});
+            final t = (props['targetSurfaceKind'] ?? props['target'])?.toString();
+            if (t != null && t.isNotEmpty) onNavSelected?.call(t);
+          },
+          child: Text(label),
+        );
+      case 'neuron:header':
+        final t = (props['title'] ?? props['text'] ?? props['label'] ?? '').toString();
+        return FHeader(title: Text(t));
+      case 'neuron:divider':
+        return const FDivider();
+      case 'forui:fsidebar':
+        return _buildNeuronMenu(props, childrenList, onEvent, rfwHost, onNavSelected, activeTarget);
+      case 'forui:fscaffold':
+        return _buildForuiScaffold(props, childrenList, onEvent, rfwHost, onNavSelected, activeTarget);
+      case 'forui:fautocomplete':
+        return _buildForuiAutocomplete(props, onEvent);
+      case 'forui:ftextfield':
+        final label = (props['label'] ?? props['hint'] ?? '').toString();
+        final hint = (props['hint'] ?? props['placeholder'] ?? label).toString();
+        return FTextField(label: Text(label), hint: hint);
+      case 'neuron:form':
+      case 'forui:fform':
+        return _NeuronForm(props: props, onEvent: onEvent);
+      case 'forui:fselect':
+        final itemsRaw = props['items'] ?? const <Object>[];
+        final items = itemsRaw is List ? itemsRaw.map((e) => e.toString()).toList() : <String>[];
+        final label = (props['label'] ?? 'Select').toString();
+        return FSelect(label: Text(label), items: {for (final i in items) i: i});
+      case 'forui:fbutton':
+        final label = (props['label'] ?? props['text'] ?? '').toString();
+        final variantStr = (props['variant'] ?? 'primary').toString().toLowerCase();
+        var variant = FButtonVariant.primary;
+        if (variantStr.contains('outline')) variant = FButtonVariant.outline;
+        if (variantStr.contains('destructive')) variant = FButtonVariant.destructive;
+        return FButton(
+          variant: variant,
+          onPress: () {
+            onEvent('press', {'label': label, ...props});
+            final t = (props['targetSurfaceKind'] ?? props['target'])?.toString();
+            if (t != null && t.isNotEmpty) onNavSelected?.call(t);
+          },
+          child: Text(label),
+        );
+      default:
+        // fall through to rfw / app-shell / raw handling below
+        break;
     }
 
     if (type == 'rfw') {
@@ -270,14 +223,6 @@ class UiSurfaceTreeRenderer {
         }
       }
 
-      if (sidebarWidget is SizedBox && props.containsKey('navItems')) {
-        sidebarWidget = _buildDynamicSidebar(
-          props['navItems'] as List? ?? const [],
-          onNavSelected,
-          activeTarget,
-        );
-      }
-
       return FScaffold(
         sidebar: sidebarWidget,
         header: headerWidget,
@@ -285,8 +230,7 @@ class UiSurfaceTreeRenderer {
       );
     }
 
-    if (type.contains('sidebar')) {
-      // Prefer children (Neuron UI Kit MenuItems or forui items) for full server-driven shell.
+    if (type == 'sidebar' || type == 'forui:sidebar') {
       if (childrenList.isNotEmpty) {
         return _buildSidebarFromChildren(
           childrenList,
@@ -296,11 +240,10 @@ class UiSurfaceTreeRenderer {
           props,
         );
       }
-      final items = (props['navItems'] ?? const []) as List;
-      return _buildDynamicSidebar(items, onNavSelected, activeTarget);
+      return const SizedBox.shrink(); // legacy navItems removed - use children
     }
 
-    if (type.contains('fcard') || type == 'card' || type == 'panel') {
+    if (type == 'fcard' || type == 'card' || type == 'panel') {
       final title = props['title']?.toString() ?? '';
       final sub =
           props['subtitle']?.toString() ?? props['summary']?.toString() ?? '';
@@ -348,7 +291,7 @@ class UiSurfaceTreeRenderer {
       );
     }
 
-    if (type == 'list' || type == 'vlist' || type.contains('list')) {
+    if (type == 'list' || type == 'vlist') {
       final raw = (props['items'] ?? childrenList) as List;
       final cards = raw.map((rawItem) {
         final m = rawItem is Map<String, Object?>
@@ -432,46 +375,6 @@ class UiSurfaceTreeRenderer {
             ),
           )
           .toList(),
-    );
-  }
-
-  Widget _buildDynamicSidebar(
-    List rawItems,
-    void Function(String)? onNav,
-    String? active,
-  ) {
-    final items = rawItems.cast<Map>();
-    final title = (items.isNotEmpty
-        ? (items.first['title']?.toString() ??
-              items.first['headerTitle']?.toString() ??
-              '')
-        : '');
-    return FSidebar(
-      header: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
-              child: Text(title, style: _sidebarTitleStyle()),
-            ),
-            const FDivider(),
-          ],
-        ),
-      ),
-      children: items.map((item) {
-        final label = item['label']?.toString() ?? '';
-        final target =
-            item['targetSurfaceKind']?.toString() ??
-            item['path']?.toString() ??
-            label;
-        return FSidebarItem(
-          label: Text(label),
-          selected: active == target,
-          onPress: () => onNav?.call(target),
-        );
-      }).toList(),
     );
   }
 
